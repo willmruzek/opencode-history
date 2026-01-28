@@ -259,6 +259,10 @@ function isValidMessageId(msgId: string): boolean {
   return /^[A-Za-z0-9._-]+$/.test(msgId);
 }
 
+function isValidSessionId(sessionId: string): boolean {
+  return /^ses_[A-Za-z0-9_-]+$/.test(sessionId);
+}
+
 export function _get_project_id_from_session(sessionId: string): string | null {
   if (!sessionId) {
     return null;
@@ -353,6 +357,13 @@ export async function agent_session_diff(
     return;
   }
 
+  // Validate sessionId to prevent path traversal and enforce expected format.
+  // Session IDs must start with "ses_" and contain only safe characters.
+  if (!isValidSessionId(sessionId)) {
+    console.log("Error: Invalid session ID format");
+    return;
+  }
+
   const sessionDir = path.join(messageRoot, sessionId);
   const messageFiles = sortByMtimeDesc(
     listFiles(sessionDir).filter((file) => file.name.endsWith(".json"))
@@ -425,9 +436,8 @@ export async function agent_session_changes(
 
   // Validate sessionId to prevent path traversal and enforce expected format.
   // Session IDs must start with "ses_" and contain only safe characters.
-  const sessionIdPattern = /^ses_[A-Za-z0-9_-]+$/;
-  if (!sessionIdPattern.test(sessionId)) {
-    console.log("Invalid session ID format");
+  if (!isValidSessionId(sessionId)) {
+    console.log("Error: Invalid session ID format");
     return;
   }
   const sessionDir = path.join(messageRoot, sessionId);
