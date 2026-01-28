@@ -27,6 +27,11 @@
       {
         "command": "opencode-history.showFileHistory",
         "title": "OpenCode: Show File History"
+      },
+      {
+        "command": "opencode-history.refresh",
+        "title": "OpenCode: Refresh History",
+        "icon": "$(refresh)"
       }
     ],
     "views": {
@@ -34,6 +39,22 @@
         {
           "id": "opencodeHistory",
           "name": "OpenCode History"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "opencode-history.refresh",
+          "when": "view == opencodeHistory",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "opencode-history.showFileHistory",
+          "group": "opencode",
+          "when": "editorTextFocus"
         }
       ]
     }
