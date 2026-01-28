@@ -2,6 +2,20 @@
 
 Shell functions for exploring OpenCode agent session history and viewing file changes.
 
+## Repository Layout
+
+- `zsh/` - Zsh shell functions (`diffs.sh`, `sessions.sh`).
+- `typescript/` - TypeScript versions of the same functions (`index.ts`).
+
+## TypeScript Usage
+
+The TypeScript functions export the same helpers and are intended to be imported into your own scripts.
+They require Node.js (for the core modules) and `git` on the PATH, plus access to the OpenCode storage
+layout under `~/.local/share/opencode/`. Because `typescript/index.ts` is TypeScript source, you’ll also
+need a TypeScript compiler or runtime (for example `tsc`, `ts-node`, or a bundler) and should either compile
+the helpers to JavaScript before running them with Node or import the `.ts` files from within an existing
+TypeScript project.
+
 ## Functions
 
 ### agent_sessions
@@ -310,8 +324,10 @@ agent_revert_file msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
 
 ## Requirements
 
-- **jq** - JSON parsing (`brew install jq` on macOS)
+- **Node.js** - Needed for the TypeScript helper module
+- **git** - Required to read OpenCode snapshots
 - **OpenCode** - Agent storage at `~/.local/share/opencode/storage/`
+- **jq** - JSON parsing for the shell versions (`zsh/`)
 
 ---
 
