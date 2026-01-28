@@ -395,7 +395,7 @@ agent_revert_file() {
     # Show the diff first
     echo "Changes to revert in: $file_path"
     echo ""
-    git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path"
+    git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff "$hash" -- "$file_path"
     echo ""
     
     printf "Revert these changes? (y/N): "

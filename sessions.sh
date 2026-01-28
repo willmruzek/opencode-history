@@ -35,7 +35,7 @@ agent_sessions() {
             local modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$session_dir" 2>/dev/null)
             # If that failed, try GNU stat (Linux)
             if [ -z "$modified" ]; then
-                modified=$(stat -c "%y" "$session_dir" 2>/dev/null | cut -d'.' -f1 | sed 's/ \([0-9][0-9]\):[0-9][0-9]:[0-9][0-9]$/ \1:\1/')
+                modified=$(stat -c "%y" "$session_dir" 2>/dev/null | cut -d'.' -f1 | sed 's/:[0-9][0-9]$//' | sed 's/\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\) \([0-9][0-9]:[0-9][0-9]\).*/\1 \2/')
             fi
         else
             # Fallback to ls if stat is not available
