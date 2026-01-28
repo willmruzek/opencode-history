@@ -353,6 +353,8 @@ agent_file_history() {
 #   This modifies your working tree directly, so make sure you have
 #   any important uncommitted work saved first.
 #
+#   Works from any directory - does not require being in the project repository.
+#
 # Examples:
 #   agent_revert_file msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
 #
