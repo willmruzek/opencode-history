@@ -423,6 +423,13 @@ export async function agent_session_changes(
     return;
   }
 
+  // Validate sessionId to prevent path traversal and enforce expected format.
+  // Session IDs must start with "ses_" and contain only safe characters.
+  const sessionIdPattern = /^ses_[A-Za-z0-9_-]+$/;
+  if (!sessionIdPattern.test(sessionId)) {
+    console.log("Invalid session ID format");
+    return;
+  }
   const sessionDir = path.join(messageRoot, sessionId);
   if (!fs.existsSync(sessionDir)) {
     console.log(`Session not found: ${sessionId}`);
