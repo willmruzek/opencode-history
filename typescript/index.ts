@@ -674,6 +674,19 @@ export async function agent_revert_file(
     filePath,
   ]);
 
+  // Fail fast if the diff command failed or produced no patch.
+  if ((diffResult.status ?? 1) !== 0) {
+    console.log("Error: Failed to compute diff for file revert.");
+    if (diffResult.stderr) {
+      process.stderr.write(diffResult.stderr);
+    }
+    return;
+  }
+
+  if (!diffResult.stdout || !diffResult.stdout.trim()) {
+    console.log("Error: No changes found to revert for this file.");
+    return;
+  }
   console.log(`Changes to revert in: ${filePath}`);
   console.log("");
   if (diffResult.stdout) {
