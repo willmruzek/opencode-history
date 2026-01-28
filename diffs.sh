@@ -370,8 +370,16 @@ agent_revert_file() {
         return 1
     fi
     
+    # Validate message ID to avoid command injection and malformed paths
+    if ! [[ "$msg_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        echo "Error: Invalid message ID format"
+        return 1
+    fi
+    
     # Get the hash
-    local hash=$(find ~/.local/share/opencode/storage/part/$msg_id -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
+    local part_base_dir="$HOME/.local/share/opencode/storage/part"
+    local hash
+    hash=$(find "$part_base_dir/$msg_id" -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
     
     if [ -z "$hash" ] || [ "$hash" = "null" ]; then
         echo "No file changes in message: $msg_id"
