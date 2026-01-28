@@ -11,7 +11,10 @@ Shell functions for exploring OpenCode agent session history and viewing file ch
 
 The TypeScript functions export the same helpers and are intended to be imported into your own scripts.
 They require Node.js (for the core modules) and `git` on the PATH, plus access to the OpenCode storage
-layout under `~/.local/share/opencode/`.
+layout under `~/.local/share/opencode/`. Because `typescript/index.ts` is TypeScript source, you’ll also
+need a TypeScript compiler or runtime (for example `tsc`, `ts-node`, or a bundler) and should either compile
+the helpers to JavaScript before running them with Node or import the `.ts` files from within an existing
+TypeScript project.
 
 ## Functions
 
