@@ -390,6 +390,12 @@ This shows only changes to that specific file, making it easy to focus on what y
 - Try increasing the limit: `agent_file_history src/index.ts 50`
 - Check that the file path is correct (relative to project root)
 
+**"Failed to apply reverse patch cleanly"**
+- The file may have changed since the original patch was applied
+- Try: `git --git-dir <snapshot_dir> diff <hash> -- <file> | git apply -R --reject`
+- This creates `.rej` files showing conflicts that need manual resolution
+- Check `git status` to see what needs to be fixed
+
 **"command not found: jq"**
 - Install jq: `brew install jq` (macOS) or `apt install jq` (Linux)
 

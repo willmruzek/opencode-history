@@ -10,7 +10,7 @@
 #
 _get_project_id_from_session() {
     local session_id=$1
-    
+
     # Try to find the session metadata file in any project
     for session_file in ~/.local/share/opencode/storage/session/*/$session_id.json; do
         if [ -f "$session_file" ]; then
@@ -18,7 +18,7 @@ _get_project_id_from_session() {
             return 0
         fi
     done
-    
+
     return 1
 }
 
@@ -32,10 +32,9 @@ _get_project_id_from_session() {
 #
 _get_project_id_from_message() {
     local msg_id=$1
-
     # Look for the message file
     local msg_file=$(find ~/.local/share/opencode/storage/message/ses_* -name "$msg_id.json" 2>/dev/null | head -1)
-    
+
     if [ -n "$msg_file" ]; then
         local session_id=$(jq -r '.sessionID' "$msg_file" 2>/dev/null)
         if [ -n "$session_id" ]; then
@@ -43,7 +42,7 @@ _get_project_id_from_message() {
             return 0
         fi
     fi
-    
+
     return 1
 }
 
@@ -79,7 +78,7 @@ _get_project_id_from_message() {
 agent_message_diff() {
     local msg_id=$1
     local file_path=$2
-    
+
     if [ -z "$msg_id" ]; then
         echo "Usage: agent_message_diff <message_id> [file_path]"
         return 1
@@ -90,38 +89,38 @@ agent_message_diff() {
         echo "Error: Invalid message ID format"
         return 1
     fi
-    
+
     local hash=$(find ~/.local/share/opencode/storage/part/$msg_id -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
-    
+
     if [ -z "$hash" ] || [ "$hash" = "null" ]; then
         echo "No file changes in message: $msg_id"
         echo ""
-        
+
         # Show what the agent did instead
         echo "=== Tools Used ==="
         find ~/.local/share/opencode/storage/part/$msg_id -name "*.json" -exec jq -r 'select(.type == "tool") | "- \(.tool)"' {} \; 2>/dev/null
         return 0
     fi
-    
+
     # Get project ID from message metadata
     local project_id=$(_get_project_id_from_message "$msg_id")
-    
+
     if [ -z "$project_id" ]; then
         echo "Error: Could not determine project ID for message"
         return 1
     fi
-    
+
     local snapshot_dir=~/.local/share/opencode/snapshot/$project_id
-    
+
     if ! [ -d "$snapshot_dir" ]; then
         echo "Error: Snapshot directory not found: $snapshot_dir"
         return 1
     fi
-    
+
     if git --git-dir $snapshot_dir cat-file -e $hash 2>/dev/null; then
         # Get the project directory for work-tree
         local project_dir=$(find ~/.local/share/opencode/storage/session -name "*.json" -exec jq -r "select(.projectID == \"$project_id\") | .directory" {} \; 2>/dev/null | head -1)
-        
+
         if [ -n "$project_dir" ] && [ -d "$project_dir" ]; then
             if [ -n "$file_path" ]; then
                 git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path"
@@ -172,23 +171,23 @@ agent_message_diff() {
 agent_session_diff() {
     local session_id=$1
     local file_path=$2
-    
+
     if [ -z "$session_id" ]; then
         echo "Usage: agent_session_diff <session_id> [file_path]"
         return 1
     fi
-    
+
     # Get the latest message from this session
     local msg_id=$(ls -t ~/.local/share/opencode/storage/message/$session_id/*.json 2>/dev/null | head -1 | xargs basename 2>/dev/null | sed 's/.json$//')
-    
+
     if [ -z "$msg_id" ]; then
         echo "No messages found in session: $session_id"
         return 1
     fi
-    
+
     echo "Latest message: $msg_id"
     echo ""
-    
+
     # Use agent_message_diff to show the changes
     agent_message_diff "$msg_id" "$file_path"
 }
@@ -220,12 +219,12 @@ agent_session_diff() {
 agent_diff_latest() {
     local file_path=$1
     local session_id=$(find ~/.local/share/opencode/storage/message -maxdepth 1 -type d -name "ses_*" 2>/dev/null | xargs ls -td 2>/dev/null | head -1 | xargs basename)
-    
+
     if [ -z "$session_id" ]; then
         echo "No sessions found"
         return 1
     fi
-    
+
     echo "Using session: $session_id"
     echo ""
     agent_session_diff $session_id "$file_path"
@@ -258,22 +257,22 @@ agent_diff_latest() {
 agent_file_history() {
     local file_path=$1
     local limit=${2:-10}
-    
+
     if [ -z "$file_path" ]; then
         echo "Usage: agent_file_history <file_path> [limit]"
         return 1
     fi
-    
+
     echo "File history for: $file_path"
     echo "Searching last $limit sessions..."
     echo ""
-    
+
     local count=0
-    
+
     # Search through recent sessions
     for session_dir in $(find ~/.local/share/opencode/storage/message -maxdepth 1 -type d -name "ses_*" 2>/dev/null | xargs ls -td 2>/dev/null | head -n $limit); do
         local session_id=$(basename "$session_dir")
-        
+
         # Get session title
         local title=""
         for session_file in ~/.local/share/opencode/storage/session/*/$session_id.json; do
@@ -282,38 +281,38 @@ agent_file_history() {
                 [ "$title" != "(no title)" ] && break
             fi
         done
-        
+
         # Check each message in this session
         for msg_file in $(ls -t $session_dir/*.json 2>/dev/null); do
             local msg_id=$(basename "$msg_file" .json)
-            
+
             # Check if this message has a patch
             local hash=$(find ~/.local/share/opencode/storage/part/$msg_id -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
-            
+
             if [ -n "$hash" ] && [ "$hash" != "null" ]; then
                 # Get project ID to check the diff
                 local project_id=$(_get_project_id_from_message "$msg_id")
-                
+
                 if [ -n "$project_id" ]; then
                     local snapshot_dir=~/.local/share/opencode/snapshot/$project_id
-                    
+
                     # Check if this hash touches our file
                     if git --git-dir $snapshot_dir cat-file -e $hash 2>/dev/null; then
                         local files_changed=$(git --git-dir $snapshot_dir diff --name-only $hash 2>/dev/null)
-                        
+
                         if echo "$files_changed" | grep -q "^${file_path}$"; then
                             local timestamp=$(jq -r '.time.created' "$msg_file" 2>/dev/null)
                             local date=$(date -r $(echo "$timestamp / 1000" | bc) "+%Y-%m-%d %H:%M" 2>/dev/null)
-                            
+
                             echo "[$msg_id]"
                             echo "  Session: $session_id"
                             echo "  Title: $title"
                             echo "  Time: $date"
                             echo ""
-                            
+
                             printf "  Show diff? (Enter/s to skip/q to quit): "
                             read -r response
-                            
+
                             if [ "$response" = "q" ]; then
                                 echo ""
                                 echo "Stopped at $count change(s)"
@@ -323,7 +322,7 @@ agent_file_history() {
                                 agent_message_diff "$msg_id" "$file_path"
                                 echo ""
                             fi
-                            
+
                             ((count++))
                             echo ""
                         fi
@@ -332,7 +331,7 @@ agent_file_history() {
             fi
         done
     done
-    
+
     if [ $count -eq 0 ]; then
         echo "No changes found for: $file_path"
     else
@@ -370,72 +369,72 @@ agent_file_history() {
 agent_revert_file() {
     local msg_id=$1
     local file_path=$2
-    
+
     if [ -z "$msg_id" ] || [ -z "$file_path" ]; then
         echo "Usage: agent_revert_file <message_id> <file_path>"
         return 1
     fi
-    
+
     # Validate message ID to avoid command injection and malformed paths
     if ! [[ "$msg_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
         echo "Error: Invalid message ID format"
         return 1
     fi
-    
+
     # Get the hash
     local part_base_dir="$HOME/.local/share/opencode/storage/part"
     local hash
     hash=$(find "$part_base_dir/$msg_id" -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
-    
+
     if [ -z "$hash" ] || [ "$hash" = "null" ]; then
         echo "No file changes in message: $msg_id"
         return 0
     fi
-    
+
     # Get project ID and directory
     local project_id=$(_get_project_id_from_message "$msg_id")
-    
+
     if [ -z "$project_id" ]; then
         echo "Error: Could not determine project ID for message"
         return 1
     fi
-    
+
     local snapshot_dir=~/.local/share/opencode/snapshot/$project_id
-    
+
     if [ ! -d "$snapshot_dir" ]; then
         echo "Error: Snapshot directory not found for project: $project_id"
         return 1
     fi
-    
+
     local project_dir=$(find ~/.local/share/opencode/storage/session -name "*.json" -exec jq -r "select(.projectID == \"$project_id\") | .directory" {} \; 2>/dev/null | head -1)
-    
+
     if [ -z "$project_dir" ] || [ ! -d "$project_dir" ]; then
         echo "Error: Could not find project directory"
         return 1
     fi
-    
+
     if ! git --git-dir $snapshot_dir cat-file -e $hash 2>/dev/null; then
         echo "Error: Snapshot does not contain hash: $hash"
         return 1
     fi
-    
+
     # Check if this hash touches our file
     local files_changed=$(git --git-dir $snapshot_dir --work-tree "$project_dir" diff --name-only $hash 2>/dev/null)
-    
+
     if ! echo "$files_changed" | grep -q "^${file_path}$"; then
         echo "Error: File '$file_path' was not modified in message $msg_id"
         return 1
     fi
-    
+
     # Show the diff first
     echo "Changes to revert in: $file_path"
     echo ""
     git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path"
     echo ""
-    
+
     printf "Revert these changes? (y/N): "
     read -r response
-    
+
     case "$response" in
         y|Y)
             # Revert changes to this file
