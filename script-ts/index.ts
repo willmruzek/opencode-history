@@ -4,17 +4,23 @@ import * as os from "node:os";
 import { spawnSync } from "child_process";
 import * as readline from "node:readline";
 
-type Entry = {
-  name: string;
-  path: string;
-  stat: fs.Stats;
-};
-
-type GitResult = {
-  status: number;
-  stdout: string;
-  stderr: string;
-};
+import {
+  Entry,
+  listDirectories,
+  listFiles,
+  sortByMtimeDesc,
+  safeReadJson,
+  formatDate,
+  formatTimestamp,
+  runGit,
+  getPatchHash,
+  getSessionTitle,
+  findMessageFile,
+  getProjectIdFromSession,
+  getProjectIdFromMessage,
+  getProjectDirectory,
+  gitCatFileExists,
+} from "../shared/history";
 
 const homeDir = os.homedir();
 const storageRoot = path.join(homeDir, ".local/share/opencode/storage");
@@ -22,70 +28,6 @@ const messageRoot = path.join(storageRoot, "message");
 const partRoot = path.join(storageRoot, "part");
 const sessionRoot = path.join(storageRoot, "session");
 const snapshotRoot = path.join(homeDir, ".local/share/opencode/snapshot");
-
-function listDirectories(dir: string): Entry[] {
-  try {
-    return fs
-      .readdirSync(dir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => {
-        const entryPath = path.join(dir, entry.name);
-        return {
-          name: entry.name,
-          path: entryPath,
-          stat: fs.statSync(entryPath),
-        };
-      });
-  } catch {
-    return [];
-  }
-}
-
-function listFiles(dir: string): Entry[] {
-  try {
-    return fs
-      .readdirSync(dir, { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .map((entry) => {
-        const entryPath = path.join(dir, entry.name);
-        return {
-          name: entry.name,
-          path: entryPath,
-          stat: fs.statSync(entryPath),
-        };
-      });
-  } catch {
-    return [];
-  }
-}
-
-function sortByMtimeDesc(entries: Entry[]): Entry[] {
-  return entries.sort((a, b) => b.stat.mtimeMs - a.stat.mtimeMs);
-}
-
-function safeReadJson(filePath: string): Record<string, unknown> | null {
-  try {
-    const raw = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-function formatDate(date: Date): string {
-  const pad = (value: number) => value.toString().padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
-  )} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function formatTimestamp(timestamp: unknown): string {
-  const numeric = Number(timestamp);
-  if (!Number.isFinite(numeric)) {
-    return "(unknown)";
-  }
-  return formatDate(new Date(numeric));
-}
 
 function prompt(question: string): Promise<string> {
   return new Promise((resolve) => {
@@ -98,32 +40,6 @@ function prompt(question: string): Promise<string> {
       resolve(answer.trim());
     });
   });
-}
-
-function runGit(args: string[], cwd?: string): GitResult {
-  const result = spawnSync("git", args, {
-    encoding: "utf8",
-    cwd,
-  });
-  return {
-    status: result.status ?? 1,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
-  };
-}
-
-function getPatchHash(msgId: string): string | null {
-  const partDir = path.join(partRoot, msgId);
-  const partFiles = listFiles(partDir).filter((file) => file.name.endsWith(".json"));
-
-  for (const file of partFiles) {
-    const data = safeReadJson(file.path);
-    if (data?.type === "patch" && typeof data.hash === "string") {
-      return data.hash;
-    }
-  }
-
-  return null;
 }
 
 function getMessageTools(msgId: string): string[] {
@@ -141,81 +57,6 @@ function getMessageTools(msgId: string): string[] {
   return tools;
 }
 
-function findMessageFile(msgId: string): { path: string; sessionId: string } | null {
-  const sessionDirs = sortByMtimeDesc(
-    listDirectories(messageRoot).filter((dir) => dir.name.startsWith("ses_"))
-  );
-
-  for (const sessionDir of sessionDirs) {
-    const msgPath = path.join(sessionDir.path, `${msgId}.json`);
-    if (!fs.existsSync(msgPath)) {
-      continue;
-    }
-
-    const data = safeReadJson(msgPath);
-    const sessionId =
-      typeof data?.sessionID === "string" ? data.sessionID : sessionDir.name;
-
-    return { path: msgPath, sessionId };
-  }
-
-  return null;
-}
-
-function getSessionTitle(sessionId: string): string {
-  const projectDirs = listDirectories(sessionRoot);
-  let title = "(no title)";
-
-  for (const projectDir of projectDirs) {
-    const sessionFile = path.join(projectDir.path, `${sessionId}.json`);
-    if (!fs.existsSync(sessionFile)) {
-      continue;
-    }
-
-    const data = safeReadJson(sessionFile);
-    if (typeof data?.title === "string") {
-      title = data.title;
-      if (title !== "(no title)") {
-        return title;
-      }
-    }
-  }
-
-  return title;
-}
-
-function getProjectDirectory(projectId: string): string | null {
-  const projectDir = path.join(sessionRoot, projectId);
-  const candidateFiles: string[] = [];
-
-  if (fs.existsSync(projectDir)) {
-    candidateFiles.push(
-      ...listFiles(projectDir)
-        .filter((file) => file.name.endsWith(".json"))
-        .map((file) => file.path)
-    );
-  }
-
-  if (candidateFiles.length === 0) {
-    for (const dir of listDirectories(sessionRoot)) {
-      candidateFiles.push(
-        ...listFiles(dir.path)
-          .filter((file) => file.name.endsWith(".json"))
-          .map((file) => file.path)
-      );
-    }
-  }
-
-  for (const sessionFile of candidateFiles) {
-    const data = safeReadJson(sessionFile);
-    if (data?.projectID === projectId && typeof data?.directory === "string") {
-      return data.directory;
-    }
-  }
-
-  return null;
-}
-
 function getGitProjectId(): string | null {
   const result = runGit(["rev-list", "--max-parents=0", "--all"]);
   if (result.status !== 0) {
@@ -224,11 +65,6 @@ function getGitProjectId(): string | null {
 
   const commits = result.stdout.split(/\r?\n/).filter(Boolean).sort();
   return commits[0] ?? null;
-}
-
-function gitCatFileExists(snapshotDir: string, hash: string): boolean {
-  const result = runGit(["--git-dir", snapshotDir, "cat-file", "-e", hash]);
-  return result.status === 0;
 }
 
 function runGitDiff(
@@ -263,38 +99,13 @@ function isValidSessionId(sessionId: string): boolean {
   return /^ses_[A-Za-z0-9_-]+$/.test(sessionId);
 }
 
+// Re-export with underscore prefix for backward compatibility
 export function _get_project_id_from_session(sessionId: string): string | null {
-  if (!sessionId) {
-    return null;
-  }
-
-  const projectDirs = listDirectories(sessionRoot);
-  for (const projectDir of projectDirs) {
-    const sessionFile = path.join(projectDir.path, `${sessionId}.json`);
-    if (!fs.existsSync(sessionFile)) {
-      continue;
-    }
-
-    const data = safeReadJson(sessionFile);
-    if (typeof data?.projectID === "string" && data.projectID.length > 0) {
-      return data.projectID;
-    }
-  }
-
-  return null;
+  return getProjectIdFromSession(sessionId);
 }
 
 export function _get_project_id_from_message(msgId: string): string | null {
-  if (!msgId) {
-    return null;
-  }
-
-  const messageInfo = findMessageFile(msgId);
-  if (!messageInfo) {
-    return null;
-  }
-
-  return _get_project_id_from_session(messageInfo.sessionId);
+  return getProjectIdFromMessage(msgId);
 }
 
 export async function agent_message_diff(

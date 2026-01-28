@@ -9,5 +9,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "TypeScript helpers for exploring OpenCode agent session history and viewing file changes"
+  "description": "TypeScript helpers for exploring OpenCode agent session history and viewing file changes",
+  "dependencies": {
+    "opencode-history-shared": "file:../shared"
+  }
 }

@@ -10,7 +10,7 @@ const partRoot = path.join(storageRoot, "part");
 const sessionRoot = path.join(storageRoot, "session");
 const snapshotRoot = path.join(homeDir, ".local/share/opencode/snapshot");
 
-interface Entry {
+export interface Entry {
   name: string;
   path: string;
   stat: fs.Stats;
@@ -38,7 +38,7 @@ interface FileHistoryEntry {
   hash: string;
 }
 
-function listDirectories(dir: string): Entry[] {
+export function listDirectories(dir: string): Entry[] {
   try {
     return fs
       .readdirSync(dir, { withFileTypes: true })
@@ -56,7 +56,7 @@ function listDirectories(dir: string): Entry[] {
   }
 }
 
-function listFiles(dir: string): Entry[] {
+export function listFiles(dir: string): Entry[] {
   try {
     return fs
       .readdirSync(dir, { withFileTypes: true })
@@ -74,11 +74,11 @@ function listFiles(dir: string): Entry[] {
   }
 }
 
-function sortByMtimeDesc(entries: Entry[]): Entry[] {
+export function sortByMtimeDesc(entries: Entry[]): Entry[] {
   return entries.sort((a, b) => b.stat.mtimeMs - a.stat.mtimeMs);
 }
 
-function safeReadJson(filePath: string): Record<string, unknown> | null {
+export function safeReadJson(filePath: string): Record<string, unknown> | null {
   try {
     const raw = fs.readFileSync(filePath, "utf8");
     return JSON.parse(raw) as Record<string, unknown>;
@@ -87,14 +87,14 @@ function safeReadJson(filePath: string): Record<string, unknown> | null {
   }
 }
 
-function formatDate(date: Date): string {
+export function formatDate(date: Date): string {
   const pad = (value: number) => value.toString().padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate()
   )} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function formatTimestamp(timestamp: unknown): string {
+export function formatTimestamp(timestamp: unknown): string {
   const numeric = Number(timestamp);
   if (!Number.isFinite(numeric)) {
     return "(unknown)";
@@ -102,7 +102,7 @@ function formatTimestamp(timestamp: unknown): string {
   return formatDate(new Date(numeric));
 }
 
-function runGit(args: string[], cwd?: string): { status: number; stdout: string; stderr: string } {
+export function runGit(args: string[], cwd?: string): { status: number; stdout: string; stderr: string } {
   const result = spawnSync("git", args, {
     encoding: "utf8",
     cwd,
@@ -114,7 +114,7 @@ function runGit(args: string[], cwd?: string): { status: number; stdout: string;
   };
 }
 
-function getPatchHash(msgId: string): string | null {
+export function getPatchHash(msgId: string): string | null {
   const partDir = path.join(partRoot, msgId);
   const partFiles = listFiles(partDir).filter((file) => file.name.endsWith(".json"));
 
@@ -128,7 +128,7 @@ function getPatchHash(msgId: string): string | null {
   return null;
 }
 
-function getSessionTitle(sessionId: string): string {
+export function getSessionTitle(sessionId: string): string {
   const projectDirs = listDirectories(sessionRoot);
   let title = "(no title)";
 
@@ -150,7 +150,7 @@ function getSessionTitle(sessionId: string): string {
   return title;
 }
 
-function getProjectIdFromSession(sessionId: string): string | null {
+export function getProjectIdFromSession(sessionId: string): string | null {
   if (!sessionId) {
     return null;
   }
@@ -171,7 +171,7 @@ function getProjectIdFromSession(sessionId: string): string | null {
   return null;
 }
 
-function findMessageFile(msgId: string): { path: string; sessionId: string } | null {
+export function findMessageFile(msgId: string): { path: string; sessionId: string } | null {
   const sessionDirs = sortByMtimeDesc(
     listDirectories(messageRoot).filter((dir) => dir.name.startsWith("ses_"))
   );
@@ -192,7 +192,7 @@ function findMessageFile(msgId: string): { path: string; sessionId: string } | n
   return null;
 }
 
-function getProjectIdFromMessage(msgId: string): string | null {
+export function getProjectIdFromMessage(msgId: string): string | null {
   if (!msgId) {
     return null;
   }
@@ -205,7 +205,7 @@ function getProjectIdFromMessage(msgId: string): string | null {
   return getProjectIdFromSession(messageInfo.sessionId);
 }
 
-function getProjectDirectory(projectId: string): string | null {
+export function getProjectDirectory(projectId: string): string | null {
   const projectDir = path.join(sessionRoot, projectId);
   const candidateFiles: string[] = [];
 
@@ -237,7 +237,7 @@ function getProjectDirectory(projectId: string): string | null {
   return null;
 }
 
-function gitCatFileExists(snapshotDir: string, hash: string): boolean {
+export function gitCatFileExists(snapshotDir: string, hash: string): boolean {
   const result = runGit(["--git-dir", snapshotDir, "cat-file", "-e", hash]);
   return result.status === 0;
 }
