@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getMessageDiff, getSessionChanges, getFileHistory } from '../../../shared/history';
+import { getMessageDiff, getSessionMessages, getFileHistory } from '../../../shared/history';
 
 export async function showMessageDiff(messageId?: string) {
   if (!messageId) {
@@ -39,7 +39,7 @@ export async function showSessionChanges(sessionId?: string) {
     return;
   }
 
-  const changes = await getSessionChanges(sessionId);
+  const changes = await getSessionMessages(sessionId);
   if (!changes || changes.length === 0) {
     vscode.window.showInformationMessage('No file changes found for this session');
     return;

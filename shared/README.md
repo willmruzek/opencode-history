@@ -46,10 +46,6 @@ Get the git diff for a specific message.
 
 **Returns:** Diff string or null if not found
 
-### `getSessionChanges(sessionId: string): Promise<Message[]>`
-
-Get all file changes from a session (alias for `getSessionMessages`).
-
 ### `getFileHistory(filePath: string, limit?: number): Promise<FileHistoryEntry[]>`
 
 Get all changes to a specific file across recent sessions.

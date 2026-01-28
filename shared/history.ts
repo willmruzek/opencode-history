@@ -351,10 +351,6 @@ export async function getMessageDiff(messageId: string, filePath?: string): Prom
   return result.stdout || null;
 }
 
-export async function getSessionChanges(sessionId: string): Promise<Message[]> {
-  return getSessionMessages(sessionId);
-}
-
 export async function getFileHistory(filePath: string, limit: number = 10): Promise<FileHistoryEntry[]> {
   const history: FileHistoryEntry[] = [];
 
