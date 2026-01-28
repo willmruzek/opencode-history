@@ -1,0 +1,78 @@
+{
+  "name": "opencode-history-viewer",
+  "displayName": "OpenCode History Viewer",
+  "description": "View file edits made by OpenCode agents in each message",
+  "version": "0.1.0",
+  "publisher": "opencode",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "opencode-history.showMessageDiff",
+        "title": "OpenCode: Show Message File Changes"
+      },
+      {
+        "command": "opencode-history.showSessionChanges",
+        "title": "OpenCode: Show Session File Changes"
+      },
+      {
+        "command": "opencode-history.showFileHistory",
+        "title": "OpenCode: Show File History"
+      },
+      {
+        "command": "opencode-history.refresh",
+        "title": "OpenCode: Refresh History",
+        "icon": "$(refresh)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "opencodeHistory",
+          "name": "OpenCode History"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "opencode-history.refresh",
+          "when": "view == opencodeHistory",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "opencode-history.showFileHistory",
+          "group": "opencode",
+          "when": "editorTextFocus"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {}
+}

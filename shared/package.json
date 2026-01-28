@@ -1,0 +1,13 @@
+{
+  "name": "opencode-history-shared",
+  "version": "1.0.0",
+  "description": "Shared utilities for OpenCode history viewing",
+  "main": "history.ts",
+  "types": "history.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["opencode", "history", "git"],
+  "author": "",
+  "license": "ISC"
+}
