@@ -8,7 +8,7 @@ This module provides a common API for both the OpenCode and VSCode extensions to
 
 ## Functions
 
-### `getRecentSessions(limit?: number): Promise<Session[]>`
+### `getRecentSessions(limit?: number): Session[]`
 
 Get recent agent sessions with metadata.
 
@@ -22,7 +22,7 @@ interface Session {
 }
 ```
 
-### `getSessionMessages(sessionId: string): Promise<Message[]>`
+### `getSessionMessages(sessionId: string): Message[]`
 
 Get all messages with file changes from a session.
 
@@ -36,7 +36,7 @@ interface Message {
 }
 ```
 
-### `getMessageDiff(messageId: string, filePath?: string): Promise<string | null>`
+### `getMessageDiff(messageId: string, filePath?: string): string | null`
 
 Get the git diff for a specific message.
 
@@ -46,7 +46,7 @@ Get the git diff for a specific message.
 
 **Returns:** Diff string or null if not found
 
-### `getFileHistory(filePath: string, limit?: number): Promise<FileHistoryEntry[]>`
+### `getFileHistory(filePath: string, limit?: number): FileHistoryEntry[]`
 
 Get all changes to a specific file across recent sessions.
 
@@ -92,11 +92,11 @@ Both OpenCode and VSCode extensions import these utilities:
 import { getRecentSessions, getMessageDiff, getFileHistory } from '../../../shared/history';
 
 // Get recent sessions
-const sessions = await getRecentSessions(10);
+const sessions = getRecentSessions(10);
 
 // Get diff for a message
-const diff = await getMessageDiff('msg_abc123');
+const diff = getMessageDiff('msg_abc123');
 
 // Get file history
-const history = await getFileHistory('src/index.ts', 20);
+const history = getFileHistory('src/index.ts', 20);
 ```

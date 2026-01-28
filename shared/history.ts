@@ -242,7 +242,7 @@ function gitCatFileExists(snapshotDir: string, hash: string): boolean {
   return result.status === 0;
 }
 
-export async function getRecentSessions(limit: number = 10): Promise<Session[]> {
+export function getRecentSessions(limit: number = 10): Session[] {
   const sessionDirs = sortByMtimeDesc(
     listDirectories(messageRoot).filter((dir) => dir.name.startsWith("ses_"))
   ).slice(0, limit);
@@ -269,7 +269,7 @@ export async function getRecentSessions(limit: number = 10): Promise<Session[]> 
   return sessions;
 }
 
-export async function getSessionMessages(sessionId: string): Promise<Message[]> {
+export function getSessionMessages(sessionId: string): Message[] {
   if (!/^ses_[A-Za-z0-9_-]+$/.test(sessionId)) {
     return [];
   }
@@ -313,7 +313,7 @@ export async function getSessionMessages(sessionId: string): Promise<Message[]> 
   return messages;
 }
 
-export async function getMessageDiff(messageId: string, filePath?: string): Promise<string | null> {
+export function getMessageDiff(messageId: string, filePath?: string): string | null {
   if (!/^[A-Za-z0-9._-]+$/.test(messageId)) {
     return null;
   }
@@ -351,7 +351,7 @@ export async function getMessageDiff(messageId: string, filePath?: string): Prom
   return result.stdout || null;
 }
 
-export async function getFileHistory(filePath: string, limit: number = 10): Promise<FileHistoryEntry[]> {
+export function getFileHistory(filePath: string, limit: number = 10): FileHistoryEntry[] {
   const history: FileHistoryEntry[] = [];
 
   const sessionDirs = sortByMtimeDesc(
