@@ -408,13 +408,13 @@ agent_revert_file() {
         return 1
     fi
     
-    if ! git --git-dir "$snapshot_dir" cat-file -e "$hash" 2>/dev/null; then
+    if ! git --git-dir $snapshot_dir cat-file -e $hash 2>/dev/null; then
         echo "Error: Snapshot does not contain hash: $hash"
         return 1
     fi
     
     # Check if this hash touches our file
-    local files_changed=$(git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff --name-only "$hash" 2>/dev/null)
+    local files_changed=$(git --git-dir $snapshot_dir --work-tree "$project_dir" diff --name-only $hash 2>/dev/null)
     
     if ! echo "$files_changed" | grep -Fxq "$file_path"; then
         echo "Error: File '$file_path' was not modified in message $msg_id"
@@ -424,7 +424,7 @@ agent_revert_file() {
     # Show the diff first
     echo "Changes to revert in: $file_path"
     echo ""
-    git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff "$hash" -- "$file_path"
+    git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path"
     echo ""
     
     printf "Revert these changes? (y/N): "
@@ -433,7 +433,7 @@ agent_revert_file() {
     case "$response" in
         y|Y)
             # Revert changes to this file
-            if ( cd "$project_dir" && git --git-dir "$snapshot_dir" diff "$hash" -- "$file_path" | git apply -R 2>/dev/null ); then
+            if ( cd "$project_dir" && git --git-dir $snapshot_dir diff $hash -- "$file_path" | git apply -R 2>/dev/null ); then
                 echo "✓ Successfully reverted changes to $file_path"
             else
                 echo "✗ Failed to apply reverse patch cleanly"
