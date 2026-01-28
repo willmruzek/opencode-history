@@ -400,29 +400,15 @@ agent_revert_file() {
         return 1
     fi
     
-<<<<<<< HEAD
-=======
-    if [ ! -d "$snapshot_dir" ]; then
-        echo "Error: Snapshot directory not found: $snapshot_dir"
-        return 1
-    fi
-    
->>>>>>> 1e7878c62966ea4669545cf4c6d8b739f3b3952e
     if ! git --git-dir "$snapshot_dir" cat-file -e "$hash" 2>/dev/null; then
         echo "Error: Snapshot does not contain hash: $hash"
         return 1
     fi
     
     # Check if this hash touches our file
-<<<<<<< HEAD
     local files_changed=$(git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff --name-only "$hash" 2>/dev/null)
     
     if ! echo "$files_changed" | grep -Fxq "$file_path"; then
-=======
-    local files_changed=$(git --git-dir "$snapshot_dir" diff --name-only "$hash" 2>/dev/null)
-    
-    if ! echo "$files_changed" | grep -q "^${file_path}$"; then
->>>>>>> 1e7878c62966ea4669545cf4c6d8b739f3b3952e
         echo "Error: File '$file_path' was not modified in message $msg_id"
         return 1
     fi
