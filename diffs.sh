@@ -401,10 +401,20 @@ agent_revert_file() {
         return 1
     fi
     
+    if [ ! -d "$snapshot_dir" ]; then
+        echo "Error: Snapshot directory not found: $snapshot_dir"
+        return 1
+    fi
+    
+    if ! git --git-dir "$snapshot_dir" cat-file -e "$hash" 2>/dev/null; then
+        echo "Error: Snapshot does not contain hash: $hash"
+        return 1
+    fi
+    
     # Show the diff first
     echo "Changes to revert in: $file_path"
     echo ""
-    git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path"
+    git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff "$hash" -- "$file_path"
     echo ""
     
     printf "Revert these changes? (y/N): "
