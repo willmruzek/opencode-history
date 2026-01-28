@@ -33,10 +33,7 @@ _get_project_id_from_session() {
 _get_project_id_from_message() {
     local msg_id=$1
     
-    # Get session ID from message
-    local session_id=$(find ~/.local/share/opencode/storage/message -type d -name "ses_*" -exec test -f {}/$.json \; -print 2>/dev/null | head -1 | xargs basename 2>/dev/null)
-    
-    # Simpler: just look for the message file
+    # Look for the message file
     local msg_file=$(find ~/.local/share/opencode/storage/message/ses_* -name "$msg_id.json" 2>/dev/null | head -1)
     
     if [ -n "$msg_file" ]; then
@@ -407,21 +404,25 @@ agent_revert_file() {
     case "$response" in
         y|Y)
             # Revert changes to this file
-            cd "$project_dir"
-            if git --git-dir $snapshot_dir diff $hash -- "$file_path" | git apply -R 2>/dev/null; then
+            cd "$project_dir" || {
+                echo "✗ Failed to change to project directory: $project_dir"
+                return 1
+            }
+            if git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path" | git apply -R 2>/dev/null; then
                 echo "✓ Successfully reverted changes to $file_path"
             else
                 echo "✗ Failed to apply reverse patch cleanly"
                 echo ""
                 echo "Try one of these:"
                 echo "  1. Resolve conflicts manually"
-                echo "  2. Use: git --git-dir $snapshot_dir diff $hash -- $file_path | git apply -R --reject"
+                echo "  2. Use: git --git-dir \"$snapshot_dir\" --work-tree \"$project_dir\" diff \"$hash\" -- \"$file_path\" | git apply -R --reject"
                 echo "     (Creates .rej files for conflicts)"
                 return 1
             fi
             ;;
         *)
             echo "Cancelled"
+            return 0
             ;;
     esac
 }

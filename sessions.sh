@@ -28,7 +28,19 @@ agent_sessions() {
     for session_dir in $(find ~/.local/share/opencode/storage/message -maxdepth 1 -type d -name "ses_*" 2>/dev/null | xargs ls -td 2>/dev/null | head -n $limit); do
         local session_id=$(basename "$session_dir")
         local msg_count=$(find "$session_dir" -maxdepth 1 -name "*.json" -type f 2>/dev/null | wc -l | tr -d ' ')
-        local modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$session_dir" 2>/dev/null)
+        
+        # Portable way to get modification time (works on both Linux and macOS)
+        if command -v stat >/dev/null 2>&1; then
+            # Try BSD stat first (macOS)
+            local modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$session_dir" 2>/dev/null)
+            # If that failed, try GNU stat (Linux)
+            if [ -z "$modified" ]; then
+                modified=$(stat -c "%y" "$session_dir" 2>/dev/null | cut -d'.' -f1 | sed 's/ \([0-9][0-9]\):[0-9][0-9]:[0-9][0-9]$/ \1:\1/')
+            fi
+        else
+            # Fallback to ls if stat is not available
+            modified=$(ls -ld "$session_dir" 2>/dev/null | awk '{print $6, $7, $8}')
+        fi
         
         # Try to find the session metadata file in any project
         local title="(no title)"
