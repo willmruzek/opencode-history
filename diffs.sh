@@ -350,6 +350,8 @@ agent_file_history() {
 #   This modifies your working tree directly, so make sure you have
 #   any important uncommitted work saved first.
 #
+#   Works from any directory - does not require being in the project repository.
+#
 # Examples:
 #   agent_revert_file msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
 #
@@ -385,10 +387,29 @@ agent_revert_file() {
     fi
     
     local snapshot_dir=~/.local/share/opencode/snapshot/$project_id
+    
+    if [ ! -d "$snapshot_dir" ]; then
+        echo "Error: Snapshot directory not found for project: $project_id"
+        return 1
+    fi
+    
     local project_dir=$(find ~/.local/share/opencode/storage/session -name "*.json" -exec jq -r "select(.projectID == \"$project_id\") | .directory" {} \; 2>/dev/null | head -1)
     
     if [ -z "$project_dir" ] || [ ! -d "$project_dir" ]; then
         echo "Error: Could not find project directory"
+        return 1
+    fi
+    
+    if ! git --git-dir "$snapshot_dir" cat-file -e "$hash" 2>/dev/null; then
+        echo "Error: Snapshot does not contain hash: $hash"
+        return 1
+    fi
+    
+    # Check if this hash touches our file
+    local files_changed=$(git --git-dir "$snapshot_dir" diff --name-only "$hash" 2>/dev/null)
+    
+    if ! echo "$files_changed" | grep -q "^${file_path}$"; then
+        echo "Error: File '$file_path' was not modified in message $msg_id"
         return 1
     fi
     
@@ -404,11 +425,7 @@ agent_revert_file() {
     case "$response" in
         y|Y)
             # Revert changes to this file
-            cd "$project_dir" || {
-                echo "✗ Failed to change to project directory: $project_dir"
-                return 1
-            }
-            if git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path" | git apply -R 2>/dev/null; then
+            if ( cd "$project_dir" && git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff "$hash" -- "$file_path" | git apply -R 2>/dev/null ); then
                 echo "✓ Successfully reverted changes to $file_path"
             else
                 echo "✗ Failed to apply reverse patch cleanly"
