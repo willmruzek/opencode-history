@@ -1,8 +1,8 @@
-import fs from "fs";
-import path from "path";
-import os from "os";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
 import { spawnSync } from "child_process";
-import readline from "readline";
+import * as readline from "node:readline";
 
 type Entry = {
   name: string;
