@@ -32,11 +32,8 @@ _get_project_id_from_session() {
 #
 _get_project_id_from_message() {
     local msg_id=$1
-    
-    # Get session ID from message
-    local session_id=$(find ~/.local/share/opencode/storage/message -type d -name "ses_*" -exec test -f {}/$.json \; -print 2>/dev/null | head -1 | xargs basename 2>/dev/null)
-    
-    # Simpler: just look for the message file
+
+    # Look for the message file
     local msg_file=$(find ~/.local/share/opencode/storage/message/ses_* -name "$msg_id.json" 2>/dev/null | head -1)
     
     if [ -n "$msg_file" ]; then
