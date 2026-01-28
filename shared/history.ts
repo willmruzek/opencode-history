@@ -388,13 +388,14 @@ export async function getFileHistory(filePath: string, limit: number = 10): Prom
         continue;
       }
 
-      const diffResult = runGit([
-        "--git-dir",
-        snapshotDir,
-        "diff",
-        "--name-only",
-        hash,
-      ]);
+      const projectDir = getProjectDirectory(projectId);
+      const args: string[] = ["--git-dir", snapshotDir];
+      if (projectDir && fs.existsSync(projectDir)) {
+        args.push("--work-tree", projectDir);
+      }
+      args.push("diff", "--name-only", hash);
+
+      const diffResult = runGit(args);
 
       const filesChanged = diffResult.stdout
         .split(/\r?\n/)
