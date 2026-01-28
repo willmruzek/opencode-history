@@ -255,6 +255,10 @@ function runGitDiff(
   }
 }
 
+function isValidMessageId(msgId: string): boolean {
+  return /^[A-Za-z0-9._-]+$/.test(msgId);
+}
+
 export function _get_project_id_from_session(sessionId: string): string | null {
   if (!sessionId) {
     return null;
@@ -295,6 +299,11 @@ export async function agent_message_diff(
 ): Promise<void> {
   if (!msgId) {
     console.log("Usage: agent_message_diff <message_id> [file_path]");
+    return;
+  }
+
+  if (!isValidMessageId(msgId)) {
+    console.log("Error: Invalid message ID format");
     return;
   }
 
@@ -583,4 +592,117 @@ export async function agent_file_history(
   } else {
     console.log(`Total: ${count} change(s) found`);
   }
+}
+
+export async function agent_revert_file(
+  msgId: string,
+  filePath: string
+): Promise<void> {
+  if (!msgId || !filePath) {
+    console.log("Usage: agent_revert_file <message_id> <file_path>");
+    return;
+  }
+
+  if (!isValidMessageId(msgId)) {
+    console.log("Error: Invalid message ID format");
+    return;
+  }
+
+  const hash = getPatchHash(msgId);
+  if (!hash) {
+    console.log(`No file changes in message: ${msgId}`);
+    return;
+  }
+
+  const projectId = _get_project_id_from_message(msgId);
+  if (!projectId) {
+    console.log("Error: Could not determine project ID for message");
+    return;
+  }
+
+  const snapshotDir = path.join(snapshotRoot, projectId);
+  if (!fs.existsSync(snapshotDir)) {
+    console.log(`Error: Snapshot directory not found for project: ${projectId}`);
+    return;
+  }
+
+  const projectDir = getProjectDirectory(projectId);
+  if (!projectDir || !fs.existsSync(projectDir)) {
+    console.log("Error: Could not find project directory");
+    return;
+  }
+
+  if (!gitCatFileExists(snapshotDir, hash)) {
+    console.log(`Error: Snapshot does not contain hash: ${hash}`);
+    return;
+  }
+
+  const filesChanged = runGit([
+    "--git-dir",
+    snapshotDir,
+    "--work-tree",
+    projectDir,
+    "diff",
+    "--name-only",
+    hash,
+  ]).stdout
+    .split(/\r?\n/)
+    .filter(Boolean);
+
+  if (!filesChanged.includes(filePath)) {
+    console.log(
+      `Error: File '${filePath}' was not modified in message ${msgId}`
+    );
+    return;
+  }
+
+  const diffResult = runGit([
+    "--git-dir",
+    snapshotDir,
+    "--work-tree",
+    projectDir,
+    "diff",
+    hash,
+    "--",
+    filePath,
+  ]);
+
+  console.log(`Changes to revert in: ${filePath}`);
+  console.log("");
+  if (diffResult.stdout) {
+    process.stdout.write(diffResult.stdout);
+  }
+  if (diffResult.stderr) {
+    process.stderr.write(diffResult.stderr);
+  }
+  console.log("");
+
+  const response = await prompt("Revert these changes? (y/N): ");
+  if (!["y", "Y"].includes(response)) {
+    console.log("Cancelled");
+    return;
+  }
+
+  const applyResult = spawnSync("git", ["apply", "-R"], {
+    encoding: "utf8",
+    cwd: projectDir,
+    input: diffResult.stdout,
+  });
+
+  if ((applyResult.status ?? 1) === 0) {
+    console.log(`✓ Successfully reverted changes to ${filePath}`);
+    return;
+  }
+
+  console.log("✗ Failed to apply reverse patch cleanly");
+  console.log("");
+  if (applyResult.stderr) {
+    process.stderr.write(applyResult.stderr);
+  }
+  console.log("Try one of these:");
+  console.log("  1. Resolve conflicts manually");
+  console.log(
+    `  2. Use: git --git-dir "${snapshotDir}" --work-tree "${projectDir}" diff "${hash}" -- "${filePath}" | git apply -R --reject`
+  );
+  console.log("     (Creates .rej files for conflicts)");
 }

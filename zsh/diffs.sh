@@ -84,6 +84,12 @@ agent_message_diff() {
         echo "Usage: agent_message_diff <message_id> [file_path]"
         return 1
     fi
+
+    # Validate message ID to avoid command injection and malformed paths
+    if ! [[ "$msg_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        echo "Error: Invalid message ID format"
+        return 1
+    fi
     
     local hash=$(find ~/.local/share/opencode/storage/part/$msg_id -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
     
@@ -332,4 +338,122 @@ agent_file_history() {
     else
         echo "Total: $count change(s) found"
     fi
+}
+
+# agent_revert_file - Interactively revert changes to a file from a message
+#
+# Usage:
+#   agent_revert_file <message_id> <file_path>
+#
+# Arguments:
+#   message_id - The message ID containing the changes
+#   file_path  - Path to the file to revert (relative to project root)
+#
+# Description:
+#   Shows the changes made to a file in a message and allows you to
+#   revert them (reverse apply the patch).
+#
+#   This modifies your working tree directly, so make sure you have
+#   any important uncommitted work saved first.
+#
+#   Works from any directory - does not require being in the project repository.
+#
+# Examples:
+#   agent_revert_file msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
+#
+# Notes:
+#   - Shows the diff before reverting
+#   - Asks for confirmation
+#   - Applies the reverse patch to your working tree
+#   - If conflicts occur, use git status to see what needs resolution
+#
+agent_revert_file() {
+    local msg_id=$1
+    local file_path=$2
+    
+    if [ -z "$msg_id" ] || [ -z "$file_path" ]; then
+        echo "Usage: agent_revert_file <message_id> <file_path>"
+        return 1
+    fi
+    
+    # Validate message ID to avoid command injection and malformed paths
+    if ! [[ "$msg_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        echo "Error: Invalid message ID format"
+        return 1
+    fi
+    
+    # Get the hash
+    local part_base_dir="$HOME/.local/share/opencode/storage/part"
+    local hash
+    hash=$(find "$part_base_dir/$msg_id" -name "*.json" -exec jq -r 'select(.type == "patch") | .hash' {} \; 2>/dev/null | head -1)
+    
+    if [ -z "$hash" ] || [ "$hash" = "null" ]; then
+        echo "No file changes in message: $msg_id"
+        return 0
+    fi
+    
+    # Get project ID and directory
+    local project_id=$(_get_project_id_from_message "$msg_id")
+    
+    if [ -z "$project_id" ]; then
+        echo "Error: Could not determine project ID for message"
+        return 1
+    fi
+    
+    local snapshot_dir=~/.local/share/opencode/snapshot/$project_id
+    
+    if [ ! -d "$snapshot_dir" ]; then
+        echo "Error: Snapshot directory not found for project: $project_id"
+        return 1
+    fi
+    
+    local project_dir=$(find ~/.local/share/opencode/storage/session -name "*.json" -exec jq -r "select(.projectID == \"$project_id\") | .directory" {} \; 2>/dev/null | head -1)
+    
+    if [ -z "$project_dir" ] || [ ! -d "$project_dir" ]; then
+        echo "Error: Could not find project directory"
+        return 1
+    fi
+    
+    if ! git --git-dir $snapshot_dir cat-file -e $hash 2>/dev/null; then
+        echo "Error: Snapshot does not contain hash: $hash"
+        return 1
+    fi
+    
+    # Check if this hash touches our file
+    local files_changed=$(git --git-dir $snapshot_dir --work-tree "$project_dir" diff --name-only $hash 2>/dev/null)
+    
+    if ! echo "$files_changed" | grep -q "^${file_path}$"; then
+        echo "Error: File '$file_path' was not modified in message $msg_id"
+        return 1
+    fi
+    
+    # Show the diff first
+    echo "Changes to revert in: $file_path"
+    echo ""
+    git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path"
+    echo ""
+    
+    printf "Revert these changes? (y/N): "
+    read -r response
+    
+    case "$response" in
+        y|Y)
+            # Revert changes to this file
+            if ( cd "$project_dir" && git --git-dir $snapshot_dir --work-tree "$project_dir" diff $hash -- "$file_path" | git apply -R 2>/dev/null ); then
+                echo "✓ Successfully reverted changes to $file_path"
+            else
+                echo "✗ Failed to apply reverse patch cleanly"
+                echo ""
+                echo "Try one of these:"
+                echo "  1. Resolve conflicts manually"
+                echo "  2. Use: git --git-dir \"$snapshot_dir\" --work-tree \"$project_dir\" diff \"$hash\" -- \"$file_path\" | git apply -R --reject"
+                echo "     (Creates .rej files for conflicts)"
+                return 1
+            fi
+            ;;
+        *)
+            echo "Cancelled"
+            return 0
+            ;;
+    esac
 }
