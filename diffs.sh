@@ -388,6 +388,12 @@ agent_revert_file() {
     fi
     
     local snapshot_dir=~/.local/share/opencode/snapshot/$project_id
+    
+    if [ ! -d "$snapshot_dir" ]; then
+        echo "Error: Snapshot directory not found for project: $project_id"
+        return 1
+    fi
+    
     local project_dir=$(find ~/.local/share/opencode/storage/session -name "*.json" -exec jq -r "select(.projectID == \"$project_id\") | .directory" {} \; 2>/dev/null | head -1)
     
     if [ -z "$project_dir" ] || [ ! -d "$project_dir" ]; then
