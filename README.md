@@ -207,6 +207,36 @@ Searching last 10 sessions...
 
 ---
 
+### agent_revert_file
+
+Interactively revert changes to a file from a message.
+
+**Usage:**
+```bash
+agent_revert_file <message_id> <file_path>
+```
+
+**Arguments:**
+- `message_id` - The message ID containing the changes (required)
+- `file_path` - Path to the file to revert (relative to project root, required)
+
+**Examples:**
+```bash
+agent_revert_file msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
+```
+
+**Output:**
+Shows the diff that will be reverted and asks for confirmation before applying the reverse patch.
+
+**Notes:**
+- Works from any directory
+- **Warning:** Modifies your working tree directly - save uncommitted work first!
+- Shows the diff before reverting
+- Asks for confirmation (y/N)
+- If conflicts occur, provides helpful error messages and suggestions
+
+---
+
 ## Common Workflows
 
 ### 1. Browse Recent Sessions
@@ -262,6 +292,18 @@ cd /tmp
 agent_sessions
 agent_session_diff ses_40cf936b4ffejsss3IluzE3n6Y
 agent_file_history src/index.ts
+```
+
+### 7. Revert Unwanted Changes
+```bash
+# Find the message with unwanted changes
+agent_session_changes ses_40cf936b4ffejsss3IluzE3n6Y
+
+# View what will be reverted
+agent_message_diff msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
+
+# Revert the changes (will ask for confirmation)
+agent_revert_file msg_bfd445c49001pyukn7ARR2RvWo src/index.ts
 ```
 
 ---
@@ -331,6 +373,12 @@ This shows only changes to that specific file, making it easy to focus on what y
 - The file wasn't modified in the searched sessions
 - Try increasing the limit: `agent_file_history src/index.ts 50`
 - Check that the file path is correct (relative to project root)
+
+**"Failed to apply reverse patch cleanly"**
+- The file may have changed since the original patch was applied
+- Try: `git --git-dir <snapshot_dir> diff <hash> -- <file> | git apply -R --reject`
+- This creates `.rej` files showing conflicts that need manual resolution
+- Check `git status` to see what needs to be fixed
 
 **"command not found: jq"**
 - Install jq: `brew install jq` (macOS) or `apt install jq` (Linux)
