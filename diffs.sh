@@ -433,22 +433,14 @@ agent_revert_file() {
     case "$response" in
         y|Y)
             # Revert changes to this file
-<<<<<<< HEAD
             if ( cd "$project_dir" && git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff "$hash" -- "$file_path" | git apply -R 2>/dev/null ); then
-=======
-            if ( cd "$project_dir" && git --git-dir "$snapshot_dir" diff "$hash" -- "$file_path" | git apply -R 2>/dev/null ); then
->>>>>>> 1e7878c62966ea4669545cf4c6d8b739f3b3952e
                 echo "✓ Successfully reverted changes to $file_path"
             else
                 echo "✗ Failed to apply reverse patch cleanly"
                 echo ""
                 echo "Try one of these:"
                 echo "  1. Resolve conflicts manually"
-<<<<<<< HEAD
                 echo "  2. Use: git --git-dir \"$snapshot_dir\" --work-tree \"$project_dir\" diff \"$hash\" -- \"$file_path\" | git apply -R --reject"
-=======
-                echo "  2. Use: git --git-dir $snapshot_dir diff $hash -- \"$file_path\" | git apply -R --reject"
->>>>>>> 1e7878c62966ea4669545cf4c6d8b739f3b3952e
                 echo "     (Creates .rej files for conflicts)"
                 return 1
             fi
