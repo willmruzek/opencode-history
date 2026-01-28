@@ -415,7 +415,7 @@ agent_revert_file() {
                 echo ""
                 echo "Try one of these:"
                 echo "  1. Resolve conflicts manually"
-                echo "  2. Use: git --git-dir $snapshot_dir diff $hash -- $file_path | git apply -R --reject"
+                echo "  2. Use: git --git-dir $snapshot_dir diff $hash -- \"$file_path\" | git apply -R --reject"
                 echo "     (Creates .rej files for conflicts)"
                 return 1
             fi
