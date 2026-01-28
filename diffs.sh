@@ -406,7 +406,7 @@ agent_revert_file() {
     fi
     
     # Check if this hash touches our file
-    local files_changed=$(git --git-dir "$snapshot_dir" diff --name-only "$hash" 2>/dev/null)
+    local files_changed=$(git --git-dir "$snapshot_dir" --work-tree "$project_dir" diff --name-only "$hash" 2>/dev/null)
     
     if ! echo "$files_changed" | grep -Fxq "$file_path"; then
         echo "Error: File '$file_path' was not modified in message $msg_id"
