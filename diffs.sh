@@ -417,7 +417,7 @@ agent_revert_file() {
     local files_changed=$(git --git-dir "$snapshot_dir" diff --name-only "$hash" 2>/dev/null)
     
     if ! echo "$files_changed" | grep -q "^${file_path}$"; then
-        echo "Error: File '$file_path' was not modified in this commit"
+        echo "Error: File '$file_path' was not modified in message $msg_id"
         return 1
     fi
     
