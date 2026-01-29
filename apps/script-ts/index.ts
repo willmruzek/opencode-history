@@ -1,8 +1,8 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
-import { spawnSync } from "child_process";
-import * as readline from "node:readline";
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import { spawnSync } from 'child_process';
+import * as readline from 'node:readline';
 
 import {
   Entry,
@@ -20,14 +20,14 @@ import {
   getProjectIdFromMessage,
   getProjectDirectory,
   gitCatFileExists,
-} from "../shared/history";
+} from '@oc-hist/shared';
 
 const homeDir = os.homedir();
-const storageRoot = path.join(homeDir, ".local/share/opencode/storage");
-const messageRoot = path.join(storageRoot, "message");
-const partRoot = path.join(storageRoot, "part");
-const sessionRoot = path.join(storageRoot, "session");
-const snapshotRoot = path.join(homeDir, ".local/share/opencode/snapshot");
+const storageRoot = path.join(homeDir, '.local/share/opencode/storage');
+const messageRoot = path.join(storageRoot, 'message');
+const partRoot = path.join(storageRoot, 'part');
+const sessionRoot = path.join(storageRoot, 'session');
+const snapshotRoot = path.join(homeDir, '.local/share/opencode/snapshot');
 
 function prompt(question: string): Promise<string> {
   return new Promise((resolve) => {
@@ -44,12 +44,14 @@ function prompt(question: string): Promise<string> {
 
 function getMessageTools(msgId: string): string[] {
   const partDir = path.join(partRoot, msgId);
-  const partFiles = listFiles(partDir).filter((file) => file.name.endsWith(".json"));
+  const partFiles = listFiles(partDir).filter((file) =>
+    file.name.endsWith('.json'),
+  );
   const tools: string[] = [];
 
   for (const file of partFiles) {
     const data = safeReadJson(file.path);
-    if (data?.type === "tool" && typeof data.tool === "string") {
+    if (data?.type === 'tool' && typeof data.tool === 'string') {
       tools.push(data.tool);
     }
   }
@@ -58,7 +60,7 @@ function getMessageTools(msgId: string): string[] {
 }
 
 function getGitProjectId(): string | null {
-  const result = runGit(["rev-list", "--max-parents=0", "--all"]);
+  const result = runGit(['rev-list', '--max-parents=0', '--all']);
   if (result.status !== 0) {
     return null;
   }
@@ -71,15 +73,15 @@ function runGitDiff(
   snapshotDir: string,
   hash: string,
   filePath?: string,
-  workTree?: string
+  workTree?: string,
 ): void {
-  const args: string[] = ["--git-dir", snapshotDir];
+  const args: string[] = ['--git-dir', snapshotDir];
   if (workTree) {
-    args.push("--work-tree", workTree);
+    args.push('--work-tree', workTree);
   }
-  args.push("diff", hash);
+  args.push('diff', hash);
   if (filePath) {
-    args.push("--", filePath);
+    args.push('--', filePath);
   }
 
   const result = runGit(args);
@@ -110,23 +112,23 @@ export function _get_project_id_from_message(msgId: string): string | null {
 
 export async function agent_message_diff(
   msgId: string,
-  filePath?: string
+  filePath?: string,
 ): Promise<void> {
   if (!msgId) {
-    console.log("Usage: agent_message_diff <message_id> [file_path]");
+    console.log('Usage: agent_message_diff <message_id> [file_path]');
     return;
   }
 
   if (!isValidMessageId(msgId)) {
-    console.log("Error: Invalid message ID format");
+    console.log('Error: Invalid message ID format');
     return;
   }
 
   const hash = getPatchHash(msgId);
   if (!hash) {
     console.log(`No file changes in message: ${msgId}`);
-    console.log("");
-    console.log("=== Tools Used ===");
+    console.log('');
+    console.log('=== Tools Used ===');
     const tools = getMessageTools(msgId);
     for (const tool of tools) {
       console.log(`- ${tool}`);
@@ -136,7 +138,7 @@ export async function agent_message_diff(
 
   const projectId = _get_project_id_from_message(msgId);
   if (!projectId) {
-    console.log("Error: Could not determine project ID for message");
+    console.log('Error: Could not determine project ID for message');
     return;
   }
 
@@ -161,23 +163,23 @@ export async function agent_message_diff(
 
 export async function agent_session_diff(
   sessionId: string,
-  filePath?: string
+  filePath?: string,
 ): Promise<void> {
   if (!sessionId) {
-    console.log("Usage: agent_session_diff <session_id> [file_path]");
+    console.log('Usage: agent_session_diff <session_id> [file_path]');
     return;
   }
 
   // Validate sessionId to prevent path traversal and enforce expected format.
   // Session IDs must start with "ses_" and contain only safe characters.
   if (!isValidSessionId(sessionId)) {
-    console.log("Error: Invalid session ID format");
+    console.log('Error: Invalid session ID format');
     return;
   }
 
   const sessionDir = path.join(messageRoot, sessionId);
   const messageFiles = sortByMtimeDesc(
-    listFiles(sessionDir).filter((file) => file.name.endsWith(".json"))
+    listFiles(sessionDir).filter((file) => file.name.endsWith('.json')),
   );
 
   if (messageFiles.length === 0) {
@@ -186,27 +188,27 @@ export async function agent_session_diff(
   }
 
   const latestMessage = messageFiles[0];
-  const msgId = latestMessage.name.replace(/\.json$/, "");
+  const msgId = latestMessage.name.replace(/\.json$/, '');
 
   console.log(`Latest message: ${msgId}`);
-  console.log("");
+  console.log('');
 
   await agent_message_diff(msgId, filePath);
 }
 
 export async function agent_diff_latest(filePath?: string): Promise<void> {
   const sessionDirs = sortByMtimeDesc(
-    listDirectories(messageRoot).filter((dir) => dir.name.startsWith("ses_"))
+    listDirectories(messageRoot).filter((dir) => dir.name.startsWith('ses_')),
   );
 
   if (sessionDirs.length === 0) {
-    console.log("No sessions found");
+    console.log('No sessions found');
     return;
   }
 
   const sessionId = sessionDirs[0].name;
   console.log(`Using session: ${sessionId}`);
-  console.log("");
+  console.log('');
 
   await agent_session_diff(sessionId, filePath);
 }
@@ -214,16 +216,16 @@ export async function agent_diff_latest(filePath?: string): Promise<void> {
 export async function agent_sessions(limit = 5): Promise<void> {
   const parsedLimit = Number.isFinite(Number(limit)) ? Number(limit) : 5;
   const sessionDirs = sortByMtimeDesc(
-    listDirectories(messageRoot).filter((dir) => dir.name.startsWith("ses_"))
+    listDirectories(messageRoot).filter((dir) => dir.name.startsWith('ses_')),
   ).slice(0, parsedLimit);
 
-  console.log("Recent sessions:");
-  console.log("");
+  console.log('Recent sessions:');
+  console.log('');
 
   for (const sessionDir of sessionDirs) {
     const sessionId = sessionDir.name;
     const messageFiles = listFiles(sessionDir.path).filter((file) =>
-      file.name.endsWith(".json")
+      file.name.endsWith('.json'),
     );
     const msgCount = messageFiles.length;
     const modified = formatDate(sessionDir.stat.mtime);
@@ -232,23 +234,23 @@ export async function agent_sessions(limit = 5): Promise<void> {
     console.log(`[${sessionId}]`);
     console.log(`  Title: ${title}`);
     console.log(`  Modified: ${modified} | Messages: ${msgCount}`);
-    console.log("");
+    console.log('');
   }
 }
 
 export async function agent_session_changes(
   sessionId: string,
-  pageSize = 10
+  pageSize = 10,
 ): Promise<void> {
   if (!sessionId) {
-    console.log("Usage: agent_session_changes <session_id> [page_size]");
+    console.log('Usage: agent_session_changes <session_id> [page_size]');
     return;
   }
 
   // Validate sessionId to prevent path traversal and enforce expected format.
   // Session IDs must start with "ses_" and contain only safe characters.
   if (!isValidSessionId(sessionId)) {
-    console.log("Error: Invalid session ID format");
+    console.log('Error: Invalid session ID format');
     return;
   }
   const sessionDir = path.join(messageRoot, sessionId);
@@ -262,26 +264,27 @@ export async function agent_session_changes(
     : 10;
 
   console.log(`Messages with file changes in session: ${sessionId}`);
-  console.log("");
+  console.log('');
 
   let count = 0;
 
   const projectId = getGitProjectId();
-  const snapshotDir = projectId ? path.join(snapshotRoot, projectId) : "";
+  const snapshotDir = projectId ? path.join(snapshotRoot, projectId) : '';
 
   const messageFiles = sortByMtimeDesc(
-    listFiles(sessionDir).filter((file) => file.name.endsWith(".json"))
+    listFiles(sessionDir).filter((file) => file.name.endsWith('.json')),
   );
 
   for (const msgFile of messageFiles) {
-    const msgId = msgFile.name.replace(/\.json$/, "");
+    const msgId = msgFile.name.replace(/\.json$/, '');
     const hash = getPatchHash(msgId);
 
     if (hash) {
       const data = safeReadJson(msgFile.path);
-      const timestamp = data?.time && typeof data.time === "object"
-        ? (data.time as { created?: number }).created
-        : undefined;
+      const timestamp =
+        data?.time && typeof data.time === 'object'
+          ? (data.time as { created?: number }).created
+          : undefined;
       const date = formatTimestamp(timestamp);
 
       console.log(`[${msgId}]`);
@@ -290,21 +293,21 @@ export async function agent_session_changes(
 
       if (snapshotDir) {
         if (gitCatFileExists(snapshotDir, hash)) {
-          console.log("  Status: ✓ snapshot available");
+          console.log('  Status: ✓ snapshot available');
         } else {
-          console.log("  Status: ✗ snapshot missing");
+          console.log('  Status: ✗ snapshot missing');
         }
       }
 
-      console.log("");
+      console.log('');
       count += 1;
 
       if (count % parsedPageSize === 0) {
         const response = await prompt(
-          `--- Showing ${count} so far. Press Enter to continue (or 'q' to quit): `
+          `--- Showing ${count} so far. Press Enter to continue (or 'q' to quit): `,
         );
-        console.log("");
-        if (response === "q") {
+        console.log('');
+        if (response === 'q') {
           console.log(`Stopped at ${count} message(s)`);
           return;
         }
@@ -313,7 +316,7 @@ export async function agent_session_changes(
   }
 
   if (count === 0) {
-    console.log("No messages with file changes found");
+    console.log('No messages with file changes found');
   } else {
     console.log(`Total: ${count} message(s) with file changes`);
   }
@@ -321,10 +324,10 @@ export async function agent_session_changes(
 
 export async function agent_file_history(
   filePath: string,
-  limit = 10
+  limit = 10,
 ): Promise<void> {
   if (!filePath) {
-    console.log("Usage: agent_file_history <file_path> [limit]");
+    console.log('Usage: agent_file_history <file_path> [limit]');
     return;
   }
 
@@ -332,12 +335,12 @@ export async function agent_file_history(
 
   console.log(`File history for: ${filePath}`);
   console.log(`Searching last ${parsedLimit} sessions...`);
-  console.log("");
+  console.log('');
 
   let count = 0;
 
   const sessionDirs = sortByMtimeDesc(
-    listDirectories(messageRoot).filter((dir) => dir.name.startsWith("ses_"))
+    listDirectories(messageRoot).filter((dir) => dir.name.startsWith('ses_')),
   ).slice(0, parsedLimit);
 
   for (const sessionDir of sessionDirs) {
@@ -345,11 +348,11 @@ export async function agent_file_history(
     const title = getSessionTitle(sessionId);
 
     const messageFiles = sortByMtimeDesc(
-      listFiles(sessionDir.path).filter((file) => file.name.endsWith(".json"))
+      listFiles(sessionDir.path).filter((file) => file.name.endsWith('.json')),
     );
 
     for (const msgFile of messageFiles) {
-      const msgId = msgFile.name.replace(/\.json$/, "");
+      const msgId = msgFile.name.replace(/\.json$/, '');
       const hash = getPatchHash(msgId);
 
       if (!hash) {
@@ -367,51 +370,50 @@ export async function agent_file_history(
       }
 
       const diffResult = runGit([
-        "--git-dir",
+        '--git-dir',
         snapshotDir,
-        "diff",
-        "--name-only",
+        'diff',
+        '--name-only',
         hash,
       ]);
 
-      const filesChanged = diffResult.stdout
-        .split(/\r?\n/)
-        .filter(Boolean);
+      const filesChanged = diffResult.stdout.split(/\r?\n/).filter(Boolean);
 
       if (!filesChanged.includes(filePath)) {
         continue;
       }
 
       const data = safeReadJson(msgFile.path);
-      const timestamp = data?.time && typeof data.time === "object"
-        ? (data.time as { created?: number }).created
-        : undefined;
+      const timestamp =
+        data?.time && typeof data.time === 'object'
+          ? (data.time as { created?: number }).created
+          : undefined;
       const date = formatTimestamp(timestamp);
 
       console.log(`[${msgId}]`);
       console.log(`  Session: ${sessionId}`);
       console.log(`  Title: ${title}`);
       console.log(`  Time: ${date}`);
-      console.log("");
+      console.log('');
 
       const response = await prompt(
-        "  Show diff? (Enter/s to skip/q to quit): "
+        '  Show diff? (Enter/s to skip/q to quit): ',
       );
 
-      if (response === "q") {
-        console.log("");
+      if (response === 'q') {
+        console.log('');
         console.log(`Stopped at ${count} change(s)`);
         return;
       }
 
-      if (response !== "s") {
-        console.log("");
+      if (response !== 's') {
+        console.log('');
         await agent_message_diff(msgId, filePath);
-        console.log("");
+        console.log('');
       }
 
       count += 1;
-      console.log("");
+      console.log('');
     }
   }
 
@@ -424,15 +426,15 @@ export async function agent_file_history(
 
 export async function agent_revert_file(
   msgId: string,
-  filePath: string
+  filePath: string,
 ): Promise<void> {
   if (!msgId || !filePath) {
-    console.log("Usage: agent_revert_file <message_id> <file_path>");
+    console.log('Usage: agent_revert_file <message_id> <file_path>');
     return;
   }
 
   if (!isValidMessageId(msgId)) {
-    console.log("Error: Invalid message ID format");
+    console.log('Error: Invalid message ID format');
     return;
   }
 
@@ -444,19 +446,21 @@ export async function agent_revert_file(
 
   const projectId = _get_project_id_from_message(msgId);
   if (!projectId) {
-    console.log("Error: Could not determine project ID for message");
+    console.log('Error: Could not determine project ID for message');
     return;
   }
 
   const snapshotDir = path.join(snapshotRoot, projectId);
   if (!fs.existsSync(snapshotDir)) {
-    console.log(`Error: Snapshot directory not found for project: ${projectId}`);
+    console.log(
+      `Error: Snapshot directory not found for project: ${projectId}`,
+    );
     return;
   }
 
   const projectDir = getProjectDirectory(projectId);
   if (!projectDir || !fs.existsSync(projectDir)) {
-    console.log("Error: Could not find project directory");
+    console.log('Error: Could not find project directory');
     return;
   }
 
@@ -466,38 +470,38 @@ export async function agent_revert_file(
   }
 
   const filesChanged = runGit([
-    "--git-dir",
+    '--git-dir',
     snapshotDir,
-    "--work-tree",
+    '--work-tree',
     projectDir,
-    "diff",
-    "--name-only",
+    'diff',
+    '--name-only',
     hash,
-  ]).stdout
-    .split(/\r?\n/)
+  ])
+    .stdout.split(/\r?\n/)
     .filter(Boolean);
 
   if (!filesChanged.includes(filePath)) {
     console.log(
-      `Error: File '${filePath}' was not modified in message ${msgId}`
+      `Error: File '${filePath}' was not modified in message ${msgId}`,
     );
     return;
   }
 
   const diffResult = runGit([
-    "--git-dir",
+    '--git-dir',
     snapshotDir,
-    "--work-tree",
+    '--work-tree',
     projectDir,
-    "diff",
+    'diff',
     hash,
-    "--",
+    '--',
     filePath,
   ]);
 
   // Fail fast if the diff command failed or produced no patch.
   if ((diffResult.status ?? 1) !== 0) {
-    console.log("Error: Failed to compute diff for file revert.");
+    console.log('Error: Failed to compute diff for file revert.');
     if (diffResult.stderr) {
       process.stderr.write(diffResult.stderr);
     }
@@ -505,27 +509,27 @@ export async function agent_revert_file(
   }
 
   if (!diffResult.stdout || !diffResult.stdout.trim()) {
-    console.log("Error: No changes found to revert for this file.");
+    console.log('Error: No changes found to revert for this file.');
     return;
   }
   console.log(`Changes to revert in: ${filePath}`);
-  console.log("");
+  console.log('');
   if (diffResult.stdout) {
     process.stdout.write(diffResult.stdout);
   }
   if (diffResult.stderr) {
     process.stderr.write(diffResult.stderr);
   }
-  console.log("");
+  console.log('');
 
-  const response = await prompt("Revert these changes? (y/N): ");
-  if (!["y", "Y"].includes(response)) {
-    console.log("Cancelled");
+  const response = await prompt('Revert these changes? (y/N): ');
+  if (!['y', 'Y'].includes(response)) {
+    console.log('Cancelled');
     return;
   }
 
-  const applyResult = spawnSync("git", ["apply", "-R"], {
-    encoding: "utf8",
+  const applyResult = spawnSync('git', ['apply', '-R'], {
+    encoding: 'utf8',
     cwd: projectDir,
     input: diffResult.stdout,
   });
@@ -535,15 +539,15 @@ export async function agent_revert_file(
     return;
   }
 
-  console.log("✗ Failed to apply reverse patch cleanly");
-  console.log("");
+  console.log('✗ Failed to apply reverse patch cleanly');
+  console.log('');
   if (applyResult.stderr) {
     process.stderr.write(applyResult.stderr);
   }
-  console.log("Try one of these:");
-  console.log("  1. Resolve conflicts manually");
+  console.log('Try one of these:');
+  console.log('  1. Resolve conflicts manually');
   console.log(
-    `  2. Use: git --git-dir "${snapshotDir}" --work-tree "${projectDir}" diff "${hash}" -- "${filePath}" | git apply -R --reject`
+    `  2. Use: git --git-dir "${snapshotDir}" --work-tree "${projectDir}" diff "${hash}" -- "${filePath}" | git apply -R --reject`,
   );
-  console.log("     (Creates .rej files for conflicts)");
+  console.log('     (Creates .rej files for conflicts)');
 }

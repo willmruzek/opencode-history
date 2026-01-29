@@ -4,11 +4,11 @@ Shell functions and plugins for exploring OpenCode agent session history and vie
 
 ## Repository Layout
 
-- **`script-zsh/`** - Zsh shell functions (`diffs.sh`, `sessions.sh`)
-- **`script-ts/`** - TypeScript versions of the shell functions
-- **`shared/`** - Shared utilities for history access (used by plugins)
-- **`opencode/`** - OpenCode plugin for viewing file edits
-- **`vscode/`** - VSCode extension for viewing file edits
+- **`apps/script-zsh/`** - Zsh shell functions (`diffs.sh`, `sessions.sh`)
+- **`apps/script-ts/`** - TypeScript versions of the shell functions
+- **`packages/shared/`** - Shared utilities for history access (package: `@oc-hist/shared`)
+- **`apps/opencode-plugin/`** - Minimal OpenCode plugin for validating hooks
+- **`apps/vscode-extension/`** - VSCode extension for viewing file edits
 
 ## Quick Start
 
@@ -17,8 +17,8 @@ Shell functions and plugins for exploring OpenCode agent session history and vie
 Source the shell functions in your `.zshrc`:
 
 ```bash
-source /path/to/script-zsh/sessions.sh
-source /path/to/script-zsh/diffs.sh
+source /path/to/apps/script-zsh/sessions.sh
+source /path/to/apps/script-zsh/diffs.sh
 ```
 
 Then use commands like:
@@ -34,7 +34,7 @@ agent_file_history src/index.ts  # Track file history
 Import the TypeScript module in your Node.js projects:
 
 ```typescript
-import { agent_sessions, agent_message_diff } from './script-ts/index';
+import { agent_sessions, agent_message_diff } from './apps/script-ts/index';
 
 await agent_sessions(10);
 await agent_message_diff('msg_abc123');
@@ -42,30 +42,31 @@ await agent_message_diff('msg_abc123');
 
 ### OpenCode Plugin
 
-The OpenCode plugin provides a UI for viewing file changes:
+The OpenCode plugin is a minimal hook implementation to confirm plugin loading:
 
 ```bash
-cd opencode
+cd apps/opencode-plugin
 npm install
-npm run compile
+npm run build
 ```
 
 Features:
-- History tree view in the sidebar
-- Click messages to view diffs
-- Search file history across sessions
+
+- Logs when the plugin loads
+- Logs when a session is created
 
 ### VSCode Extension
 
 The VSCode extension provides similar functionality in VSCode:
 
 ```bash
-cd vscode
+cd apps/vscode-extension
 npm install
 npm run compile
 ```
 
 Features:
+
 - History tree view in Explorer
 - Command palette integration
 - Right-click context menu for file history
@@ -234,17 +235,12 @@ This shows only changes to that specific file, making it easy to focus on what y
 
 ## Plugin Architecture
 
-Both the OpenCode and VSCode plugins share the same core utilities from the `shared/` directory:
+The VSCode extension and scripts share the same core utilities from the `packages/shared/` directory:
 
 ```
-shared/history.ts          # Core history access functions
+packages/shared/history.ts  # Core history access functions
     ↓
-├── opencode/src/         # OpenCode plugin
-│   ├── extension.ts
-│   ├── historyTreeProvider.ts
-│   └── commands.ts
-│
-└── vscode/src/           # VSCode extension
+└── apps/vscode-extension/src/  # VSCode extension
     ├── extension.ts
     ├── historyTreeProvider.ts
     └── commands.ts
@@ -261,7 +257,7 @@ The Zsh scripts can be modified directly and sourced immediately.
 ### TypeScript Modules
 
 ```bash
-cd script-ts
+cd apps/script-ts
 npm install
 # Edit index.ts
 # Use directly with ts-node or compile
@@ -271,12 +267,12 @@ npm install
 
 ```bash
 # OpenCode plugin
-cd opencode
+cd apps/opencode-plugin
 npm install
 npm run watch  # Auto-compile on changes
 
 # VSCode extension
-cd vscode
+cd apps/vscode-extension
 npm install
 npm run watch  # Auto-compile on changes
 # Press F5 in VSCode to launch extension development host
@@ -285,17 +281,21 @@ npm run watch  # Auto-compile on changes
 ## Troubleshooting
 
 **"No sessions found"**
+
 - Check that OpenCode has created sessions in `~/.local/share/opencode/storage/message/`
 
 **"Could not determine project ID for message"**
+
 - The session metadata file may be missing
 - Try running from the project directory as a fallback
 
 **"Snapshot not available"**
+
 - The git snapshot for this change may have been cleaned up
 - The message exists but the diff cannot be reconstructed
 
 **"command not found: jq"**
+
 - Install jq: `brew install jq` (macOS) or `apt install jq` (Linux)
 
 ## License

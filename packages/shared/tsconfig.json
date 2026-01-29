@@ -1,0 +1,10 @@
+{
+  "extends": "../../tools/config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true
+  },
+  "include": ["history.ts"],
+  "exclude": ["node_modules", "dist"]
+}

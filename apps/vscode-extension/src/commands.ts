@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
-import { getMessageDiff, getSessionMessages, getFileHistory } from 'opencode-history-shared';
+import {
+  getMessageDiff,
+  getSessionMessages,
+  getFileHistory,
+} from '@oc-hist/shared';
 
 interface MessageQuickPickItem extends vscode.QuickPickItem {
   messageId: string;
@@ -9,7 +13,7 @@ export async function showMessageDiff(messageId?: string) {
   if (!messageId) {
     messageId = await vscode.window.showInputBox({
       prompt: 'Enter message ID',
-      placeHolder: 'msg_...'
+      placeHolder: 'msg_...',
     });
   }
 
@@ -19,14 +23,16 @@ export async function showMessageDiff(messageId?: string) {
 
   const diff = await getMessageDiff(messageId);
   if (!diff) {
-    vscode.window.showInformationMessage('No file changes found for this message');
+    vscode.window.showInformationMessage(
+      'No file changes found for this message',
+    );
     return;
   }
 
   // Create a new document with the diff
   const doc = await vscode.workspace.openTextDocument({
     content: diff,
-    language: 'diff'
+    language: 'diff',
   });
   await vscode.window.showTextDocument(doc);
 }
@@ -35,7 +41,7 @@ export async function showSessionChanges(sessionId?: string) {
   if (!sessionId) {
     sessionId = await vscode.window.showInputBox({
       prompt: 'Enter session ID',
-      placeHolder: 'ses_...'
+      placeHolder: 'ses_...',
     });
   }
 
@@ -45,19 +51,21 @@ export async function showSessionChanges(sessionId?: string) {
 
   const changes = await getSessionMessages(sessionId);
   if (!changes || changes.length === 0) {
-    vscode.window.showInformationMessage('No file changes found for this session');
+    vscode.window.showInformationMessage(
+      'No file changes found for this session',
+    );
     return;
   }
 
   // Show quick pick to select a message
   const selected = await vscode.window.showQuickPick<MessageQuickPickItem>(
-    changes.map(msg => ({
+    changes.map((msg) => ({
       label: msg.id,
       description: msg.timestamp,
       detail: `Hash: ${msg.hash}`,
-      messageId: msg.id
+      messageId: msg.id,
     })),
-    { placeHolder: 'Select a message to view changes' }
+    { placeHolder: 'Select a message to view changes' },
   );
 
   if (selected) {
@@ -73,7 +81,7 @@ export async function showFileHistory(filePath?: string) {
     } else {
       filePath = await vscode.window.showInputBox({
         prompt: 'Enter file path',
-        placeHolder: 'src/index.ts'
+        placeHolder: 'src/index.ts',
       });
     }
   }
@@ -90,13 +98,13 @@ export async function showFileHistory(filePath?: string) {
 
   // Show quick pick to select a change
   const selected = await vscode.window.showQuickPick<MessageQuickPickItem>(
-    history.map(entry => ({
+    history.map((entry) => ({
       label: entry.sessionTitle,
       description: entry.timestamp,
       detail: `Message: ${entry.messageId}`,
-      messageId: entry.messageId
+      messageId: entry.messageId,
     })),
-    { placeHolder: `Select a change to view for ${filePath}` }
+    { placeHolder: `Select a change to view for ${filePath}` },
   );
 
   if (selected) {
@@ -104,7 +112,7 @@ export async function showFileHistory(filePath?: string) {
     if (diff) {
       const doc = await vscode.workspace.openTextDocument({
         content: diff,
-        language: 'diff'
+        language: 'diff',
       });
       await vscode.window.showTextDocument(doc);
     }

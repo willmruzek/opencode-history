@@ -13,6 +13,7 @@ This module provides a common API for both the OpenCode and VSCode extensions to
 Get recent agent sessions with metadata.
 
 **Returns:**
+
 ```typescript
 interface Session {
   id: string;
@@ -27,6 +28,7 @@ interface Session {
 Get all messages with file changes from a session.
 
 **Returns:**
+
 ```typescript
 interface Message {
   id: string;
@@ -41,6 +43,7 @@ interface Message {
 Get the git diff for a specific message.
 
 **Parameters:**
+
 - `messageId` - The message ID to get diff for
 - `filePath` - Optional path to filter diff to specific file
 
@@ -51,6 +54,7 @@ Get the git diff for a specific message.
 Get all changes to a specific file across recent sessions.
 
 **Returns:**
+
 ```typescript
 interface FileHistoryEntry {
   messageId: string;
@@ -89,7 +93,11 @@ interface FileHistoryEntry {
 Both OpenCode and VSCode extensions import these utilities using the package alias:
 
 ```typescript
-import { getRecentSessions, getMessageDiff, getFileHistory } from 'opencode-history-shared';
+import {
+  getRecentSessions,
+  getMessageDiff,
+  getFileHistory,
+} from '@oc-hist/shared';
 
 // Get recent sessions
 const sessions = getRecentSessions(10);
