@@ -11,7 +11,11 @@ interface EventPayload {
   };
 }
 
-export const MinimalPlugin = async ({ project, directory, worktree }: PluginContext) => {
+export const MinimalPlugin = async ({
+  project,
+  directory,
+  worktree,
+}: PluginContext) => {
   console.log('OpenCode plugin loaded.');
   console.log(`Project: ${project?.name ?? 'unknown'}`);
   console.log(`Directory: ${directory}`);
