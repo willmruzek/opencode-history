@@ -254,7 +254,16 @@ export function getProjectDirectory(projectId: string): string | null {
   return null;
 }
 
+function isValidGitHash(hash: string): boolean {
+  // SHA-1 object IDs are 40 hexadecimal characters
+  return /^[0-9a-f]{40}$/i.test(hash);
+}
+
 export function gitCatFileExists(snapshotDir: string, hash: string): boolean {
+  if (!isValidGitHash(hash)) {
+    // Treat invalid hashes as non-existent objects without invoking git
+    return false;
+  }
   const result = runGit(["--git-dir", snapshotDir, "cat-file", "-e", hash]);
   return result.status === 0;
 }
