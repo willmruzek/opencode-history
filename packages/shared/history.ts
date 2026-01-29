@@ -406,8 +406,8 @@ export function getSessionMessages(sessionId: string): Message[] {
  * - Git hash doesn't exist in snapshot
  */
 export function getMessageDiff(messageId: string, filePath?: string): string | null {
-  // Validate message ID format (alphanumeric, underscores, hyphens only)
-  if (!/^[A-Za-z0-9_-]+$/.test(messageId)) {
+  // Validate message ID format (alphanumeric, periods, underscores, hyphens only)
+  if (!/^[A-Za-z0-9._-]+$/.test(messageId)) {
     return null;
   }
 
