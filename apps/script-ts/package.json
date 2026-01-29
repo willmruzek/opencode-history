@@ -1,5 +1,5 @@
 {
-  "name": "opencode-agent-tools",
+  "name": "@oc-hist/script-ts",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,5 +9,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "TypeScript helpers for exploring OpenCode agent session history and viewing file changes"
+  "description": "TypeScript helpers for exploring OpenCode agent session history and viewing file changes",
+  "dependencies": {
+    "@oc-hist/shared": "workspace:*"
+  }
 }
