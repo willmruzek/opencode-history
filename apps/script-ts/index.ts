@@ -5,7 +5,6 @@ import { spawnSync } from 'child_process';
 import * as readline from 'node:readline';
 
 import {
-  Entry,
   listDirectories,
   listFiles,
   sortByMtimeDesc,
@@ -15,7 +14,6 @@ import {
   runGit,
   getPatchHash,
   getSessionTitle,
-  findMessageFile,
   getProjectIdFromSession,
   getProjectIdFromMessage,
   getProjectDirectory,
@@ -26,7 +24,6 @@ const homeDir = os.homedir();
 const storageRoot = path.join(homeDir, '.local/share/opencode/storage');
 const messageRoot = path.join(storageRoot, 'message');
 const partRoot = path.join(storageRoot, 'part');
-const sessionRoot = path.join(storageRoot, 'session');
 const snapshotRoot = path.join(homeDir, '.local/share/opencode/snapshot');
 
 function prompt(question: string): Promise<string> {
