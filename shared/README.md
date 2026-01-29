@@ -86,10 +86,10 @@ interface FileHistoryEntry {
 
 ## Usage in Extensions
 
-Both OpenCode and VSCode extensions import these utilities:
+Both OpenCode and VSCode extensions import these utilities using the package alias:
 
 ```typescript
-import { getRecentSessions, getMessageDiff, getFileHistory } from '../../../shared/history';
+import { getRecentSessions, getMessageDiff, getFileHistory } from 'opencode-history-shared';
 
 // Get recent sessions
 const sessions = getRecentSessions(10);
