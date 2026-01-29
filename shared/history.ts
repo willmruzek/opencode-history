@@ -321,15 +321,15 @@ export function getSessionMessages(sessionId: string): Message[] {
  * @returns Diff string or null if not found
  * 
  * Returns null in the following cases:
- * - Invalid message ID format or potential directory traversal
+ * - Invalid message ID format
  * - Message has no associated patch hash
  * - Cannot determine project ID from message
  * - Snapshot directory doesn't exist for project
  * - Git hash doesn't exist in snapshot
  */
 export function getMessageDiff(messageId: string, filePath?: string): string | null {
-  // Validate message ID to prevent directory traversal attacks
-  if (!/^[A-Za-z0-9._-]+$/.test(messageId) || messageId.includes("..")) {
+  // Validate message ID format (alphanumeric, periods, underscores, hyphens only)
+  if (!/^[A-Za-z0-9._-]+$/.test(messageId)) {
     return null;
   }
 
@@ -373,7 +373,7 @@ export function getMessageDiff(messageId: string, filePath?: string): string | n
  * @param limit - Maximum number of recent sessions to search (default: 10)
  * @returns Array of file history entries
  * 
- * Performance note: This function has O(n*m) complexity where n is the number 
+ * Performance note: This function has O(n*m) complexity, where n is the number 
  * of sessions and m is the average number of messages per session. For each 
  * message with a hash, it spawns a git process to get changed files. Consider 
  * batching git operations or caching results for better performance in large 
