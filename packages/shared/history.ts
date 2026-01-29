@@ -146,8 +146,9 @@ export function isValidFilePath(filePath: string): boolean {
   }
 
   // Check for path traversal attempts
-  // After normalization, paths starting with .. are traversing outside
-  if (normalized.startsWith("..") || normalized.includes(`${path.sep}..${path.sep}`) || normalized.includes(`${path.sep}..`)) {
+  // After normalization, any remaining ".." segment indicates traversal outside
+  const segments = normalized.split(path.sep);
+  if (segments.some((segment) => segment === "..")) {
     return false;
   }
 
