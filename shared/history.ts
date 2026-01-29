@@ -122,6 +122,7 @@ export function runGit(args: string[], cwd?: string): { status: number; stdout: 
  * @returns true if the path is safe, false otherwise
  */
 export function isValidFilePath(filePath: string): boolean {
+  // Reject empty strings, non-strings, and falsy values
   if (!filePath || typeof filePath !== "string") {
     return false;
   }
@@ -139,6 +140,11 @@ export function isValidFilePath(filePath: string): boolean {
   // Normalize the path to resolve . and .. sequences
   const normalized = path.normalize(filePath);
 
+  // Reject paths that normalize to current directory or empty
+  if (normalized === "." || normalized === "") {
+    return false;
+  }
+
   // Check for path traversal attempts
   // After normalization, paths starting with .. are traversing outside
   if (normalized.startsWith("..") || normalized.includes(`${path.sep}..${path.sep}`) || normalized.includes(`${path.sep}..`)) {
@@ -151,8 +157,8 @@ export function isValidFilePath(filePath: string): boolean {
     return false;
   }
 
-  // Check for Windows absolute paths (e.g., C:\ or \\)
-  if (/^[a-zA-Z]:/.test(normalized) || normalized.startsWith("\\\\")) {
+  // Check for Windows absolute paths (e.g., C:\ or C:/ or \\)
+  if (/^[a-zA-Z]:[/\\]/.test(normalized) || normalized.startsWith("\\\\")) {
     return false;
   }
 
