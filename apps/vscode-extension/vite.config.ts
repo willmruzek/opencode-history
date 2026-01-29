@@ -12,7 +12,7 @@ export default defineConfig({
     sourcemap: true,
     target: 'node16',
     rollupOptions: {
-      external: ['vscode', '@oc-hist/shared'],
+      external: ['vscode'],
       output: {
         exports: 'auto',
       },
