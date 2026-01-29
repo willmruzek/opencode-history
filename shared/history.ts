@@ -205,7 +205,24 @@ export function getProjectIdFromMessage(msgId: string): string | null {
   return getProjectIdFromSession(messageInfo.sessionId);
 }
 
+function isSafeProjectId(projectId: string): boolean {
+  if (!projectId) {
+    return false;
+  }
+
+  // Disallow path separators and directory traversal sequences.
+  if (projectId.includes(path.sep) || projectId.includes("..")) {
+    return false;
+  }
+
+  // Allow only alphanumeric characters, hyphens, and underscores.
+  return /^[A-Za-z0-9_-]+$/.test(projectId);
+}
+
 export function getProjectDirectory(projectId: string): string | null {
+  if (!isSafeProjectId(projectId)) {
+    return null;
+  }
   const projectDir = path.join(sessionRoot, projectId);
   const candidateFiles: string[] = [];
 
