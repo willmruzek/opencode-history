@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getRecentSessions, getSessionMessages } from '../../../shared/history';
+import { getRecentSessions, getSessionMessages, Session, Message } from 'opencode-history-shared';
 
 export class HistoryTreeDataProvider implements vscode.TreeDataProvider<HistoryItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<HistoryItem | undefined | null | void> = 
@@ -30,7 +30,7 @@ export class HistoryTreeDataProvider implements vscode.TreeDataProvider<HistoryI
 }
 
 class SessionItem extends vscode.TreeItem {
-  constructor(public readonly session: any) {
+  constructor(public readonly session: Session) {
     super(session.title || '(no title)', vscode.TreeItemCollapsibleState.Collapsed);
     this.sessionId = session.id;
     this.description = `${session.messageCount} messages`;
@@ -42,7 +42,7 @@ class SessionItem extends vscode.TreeItem {
 }
 
 class MessageItem extends vscode.TreeItem {
-  constructor(public readonly message: any, public readonly sessionId: string) {
+  constructor(public readonly message: Message, public readonly sessionId: string) {
     super(`Message ${message.id.substring(0, 12)}...`, vscode.TreeItemCollapsibleState.None);
     this.description = message.timestamp;
     this.tooltip = `Message: ${message.id}\nHash: ${message.hash}`;

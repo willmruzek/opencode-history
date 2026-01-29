@@ -16,21 +16,21 @@ export interface Entry {
   stat: fs.Stats;
 }
 
-interface Session {
+export interface Session {
   id: string;
   title: string;
   modified: string;
   messageCount: number;
 }
 
-interface Message {
+export interface Message {
   id: string;
   timestamp: string;
   hash: string;
   hasSnapshot: boolean;
 }
 
-interface FileHistoryEntry {
+export interface FileHistoryEntry {
   messageId: string;
   sessionId: string;
   sessionTitle: string;
@@ -314,7 +314,7 @@ export function getSessionMessages(sessionId: string): Message[] {
 }
 
 export function getMessageDiff(messageId: string, filePath?: string): string | null {
-  if (!/^[A-Za-z0-9._-]+$/.test(messageId)) {
+  if (!/^[A-Za-z0-9._-]+$/.test(messageId) || messageId.includes("..")) {
     return null;
   }
 

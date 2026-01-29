@@ -13,7 +13,10 @@ module.exports = {
     opencode: 'commonjs opencode'
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    alias: {
+      'opencode-history-shared': path.resolve(__dirname, '../shared/history.ts')
+    }
   },
   module: {
     rules: [

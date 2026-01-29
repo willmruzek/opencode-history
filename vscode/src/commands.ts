@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
-import { getMessageDiff, getSessionMessages, getFileHistory } from '../../../shared/history';
+import { getMessageDiff, getSessionMessages, getFileHistory } from 'opencode-history-shared';
+
+interface MessageQuickPickItem extends vscode.QuickPickItem {
+  messageId: string;
+}
 
 export async function showMessageDiff(messageId?: string) {
   if (!messageId) {
@@ -46,7 +50,7 @@ export async function showSessionChanges(sessionId?: string) {
   }
 
   // Show quick pick to select a message
-  const selected = await vscode.window.showQuickPick(
+  const selected = await vscode.window.showQuickPick<MessageQuickPickItem>(
     changes.map(msg => ({
       label: msg.id,
       description: msg.timestamp,
@@ -85,7 +89,7 @@ export async function showFileHistory(filePath?: string) {
   }
 
   // Show quick pick to select a change
-  const selected = await vscode.window.showQuickPick(
+  const selected = await vscode.window.showQuickPick<MessageQuickPickItem>(
     history.map(entry => ({
       label: entry.sessionTitle,
       description: entry.timestamp,
