@@ -114,6 +114,57 @@ export function runGit(args: string[], cwd?: string): { status: number; stdout: 
   };
 }
 
+/**
+ * Validates a file path to prevent path traversal and injection attacks.
+ * Returns true if the path is safe to use, false otherwise.
+ * 
+ * @param filePath - The file path to validate
+ * @returns true if the path is safe, false otherwise
+ */
+export function isValidFilePath(filePath: string): boolean {
+  // Reject empty strings, non-strings, and falsy values
+  if (!filePath || typeof filePath !== "string") {
+    return false;
+  }
+
+  // Check for null bytes which can be used for injection
+  if (filePath.includes("\0")) {
+    return false;
+  }
+
+  // Check for newlines which can be used for command injection
+  if (filePath.includes("\n") || filePath.includes("\r")) {
+    return false;
+  }
+
+  // Normalize the path to resolve . and .. sequences
+  const normalized = path.normalize(filePath);
+
+  // Reject paths that normalize to current directory or empty
+  if (normalized === "." || normalized === "") {
+    return false;
+  }
+
+  // Check for path traversal attempts
+  // After normalization, paths starting with .. are traversing outside
+  if (normalized.startsWith("..") || normalized.includes(`${path.sep}..${path.sep}`) || normalized.includes(`${path.sep}..`)) {
+    return false;
+  }
+
+  // Check for absolute paths on Unix (starting with /)
+  // We want relative paths only for git diff
+  if (normalized.startsWith("/")) {
+    return false;
+  }
+
+  // Check for Windows absolute paths (e.g., C:\ or C:/ or \\)
+  if (/^[a-zA-Z]:[/\\]/.test(normalized) || normalized.startsWith("\\\\")) {
+    return false;
+  }
+
+  return true;
+}
+
 export function getPatchHash(msgId: string): string | null {
   const partDir = path.join(partRoot, msgId);
   const partFiles = listFiles(partDir).filter((file) => file.name.endsWith(".json"));
@@ -385,6 +436,10 @@ export function getMessageDiff(messageId: string, filePath?: string): string | n
   }
   args.push("diff", hash);
   if (filePath) {
+    // Validate file path to prevent path traversal and injection attacks
+    if (!isValidFilePath(filePath)) {
+      return null;
+    }
     args.push("--", filePath);
   }
 
@@ -406,6 +461,11 @@ export function getMessageDiff(messageId: string, filePath?: string): string | n
  * repositories.
  */
 export function getFileHistory(filePath: string, limit: number = 10): FileHistoryEntry[] {
+  // Validate file path to prevent path traversal and injection attacks
+  if (!isValidFilePath(filePath)) {
+    return [];
+  }
+
   const history: FileHistoryEntry[] = [];
 
   const sessionDirs = sortByMtimeDesc(
