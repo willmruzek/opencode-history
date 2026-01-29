@@ -15,6 +15,8 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
+      // Points to TypeScript source for ts-loader to compile during bundling.
+      // This provides better source maps and debugging than using pre-compiled JS.
       'opencode-history-shared': path.resolve(__dirname, '../shared/history.ts')
     }
   },
